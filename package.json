@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@johntalton/and-other-delights": "^6.0.0",
+    "@johntalton/i2c-port": "^1.0.0",
+    "@johntalton/tca9548a": "^5.0.0"
+  }
+}
