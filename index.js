@@ -4,6 +4,8 @@ import {
 	EXCAMERA_LABS_MINI_PRODUCT_ID
 } from './excamera-labs-i2c-driver/i2c-driver.js'
 
+import { CaptureEventParser } from './excamera-labs-i2c-driver/parse-event.js'
+
 // import { SSD1306 } from './ssd1306/ssd1306.js'
 import * as tcaModule from './node_modules/@johntalton/tca9548a/src/index.js'
 const { Tca9548a } = tcaModule
@@ -184,6 +186,8 @@ async function onContentLoaded() {
 						if(deviceGuesses.length > 0) {
 
 							const guessSelect = document.createElement('select')
+							guessSelect.disabled = deviceGuesses.length === 1
+
 							const options = deviceGuesses.map(guess => {
 								const option = document.createElement('option')
 								option.appendChild(document.createTextNode(guess.name))
@@ -379,13 +383,60 @@ async function onContentLoaded() {
 
 			const defaultReader = port.readable.getReader()
 			
-			//for(let i in Array.from({ length: 10 }, () => 0)) {
-			while(true) {
-				//console.log('read')
-				const result = await defaultReader.read()
-				const ary = [ ...result.value ]
-				console.log(...ary.filter(v => v !== 0).map(v => v.toString(16)))
+
+			function* range(start, end) {
+				yield start
+				if (start === end) return
+				yield* range(start + 1, end)
 			}
+
+			async function *reader(dReader) {
+				while(true) {
+					const { value, done } = await dReader.read()
+					if(done) { return }
+					yield value.buffer
+				}
+			}
+
+			async function* byteStream(sbStream) {
+				for await (const sourceBuffer of sbStream) {
+					const dv = ArrayBuffer.isView(sourceBuffer) ?
+						new DataView(sourceBuffer.buffer, sourceBuffer.byteOffset, sourceBuffer.byteLength) :
+						new DataView(sourceBuffer)
+
+					for (const idx of range(0, dv.byteLength - 1)) {
+						yield dv.getUint8(idx)
+					}
+				}
+			}
+
+			async function* eventByteStream(bStream) {	
+				for await(const b of bStream) {
+					yield (b >> 4 & 0xf)
+					yield (b & 0xf)
+				}
+			}
+
+			async function* eventStream(ebStream) {
+				for await(const eb of ebStream) {
+					yield CaptureEventParser.parseEventByte(eb)
+				}
+			}
+
+			async function* eventStateMachineStream(eStream, options) {
+				for await(const e of eStream) {
+					if(e === 'idle') { continue }
+
+					yield e
+				}
+			}
+
+			const pipeline = eventStream(eventByteStream(byteStream(reader(defaultReader))))
+			const logical = eventStateMachineStream(pipeline, {})
+			for await (const event of logical) {
+				console.log({ event })
+			}
+
 
 			console.log('cancel')
 			defaultReader.cancel()
