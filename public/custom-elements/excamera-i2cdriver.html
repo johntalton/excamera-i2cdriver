@@ -1,0 +1,17 @@
+<template>
+	<div>
+		<button>Config</button>
+		<button>Virtual Bus</button>
+		<button>Capture</button>
+	</div>
+	<div part="scan-display">
+		<slot name="scan-display"></slot>
+	</div>
+	<div part="config">
+		<slot name="config"></slot>
+	</div>
+	<div part="capture">
+		<slot name="capture"></slot>
+		<slot name="capture-controls"></slot>
+	</div>
+</template>

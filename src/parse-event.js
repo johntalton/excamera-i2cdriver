@@ -1,7 +1,7 @@
 const mattched = value => ({ when: () => mattched(value), value: () => value })
 
 const match = eventByte => ({
-	when: (matchByte, value) => 
+	when: (matchByte, value) =>
 		matchByte === eventByte ? mattched(value) : match(eventByte),
 	value: () => { throw new Error('unmatched byte: ' + eventByte) }
 })
@@ -31,14 +31,14 @@ export class CaptureEventParser {
 			{ eventByte: 0x1, name: 'start', start: true },
 			{ eventByte: 0x2, name: 'stop', stop: true },
 			// 3 -7
-			{ eventByte: 0x8, name: '000', value: 0b000 },
-			{ eventByte: 0x9, name: '001', value: 0b001 },
-			{ eventByte: 0xa, name: '010', value: 0b010 },
-			{ eventByte: 0xb, name: '011', value: 0b011 },
-			{ eventByte: 0xc, name: '100', value: 0b100 },
-			{ eventByte: 0xd, name: '101', value: 0b101 },
-			{ eventByte: 0xe, name: '110', value: 0b110 },
-			{ eventByte: 0xf, name: '111', value: 0b111 }
+			{ eventByte: 0x8, name: '000', value: 0b000, data: true },
+			{ eventByte: 0x9, name: '001', value: 0b001, data: true },
+			{ eventByte: 0xa, name: '010', value: 0b010, data: true },
+			{ eventByte: 0xb, name: '011', value: 0b011, data: true },
+			{ eventByte: 0xc, name: '100', value: 0b100, data: true },
+			{ eventByte: 0xd, name: '101', value: 0b101, data: true },
+			{ eventByte: 0xe, name: '110', value: 0b110, data: true },
+			{ eventByte: 0xf, name: '111', value: 0b111, data: true }
 		]
 
 		return table.find(item => item.eventByte === eventByte)
