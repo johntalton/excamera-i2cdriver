@@ -17,10 +17,35 @@ async function validateEvent(event, options) {
 }
 
 async function takeActions(event, info, options) {
-	const { setAddress, countBytes } = info
+	const {
+		openTransaction, closeTransaction,
+		setAddress, clearAddress,
+		bufferBytes, flushBytes
+	} = info
 
-	if(setAddress) { options.address = event.value }
-	if(countBytes) { options.byteCount += 1 }
+
+	if(openTransaction) {}
+	if(closeTransaction) {}
+
+
+	if(setAddress) {
+		options.address = event.value >> 1
+		options.mode = event.value & 0b1 === 1 ? 'read' : 'write'
+	}
+
+	if(clearAddress) {
+		options.address = undefined
+		options.mode = undefined
+	}
+
+	const source = options.tempBuffer ?? []
+	if(bufferBytes) { options.tempBuffer = [ ...source, event.value ] }
+
+	if(flushBytes) {
+		console.log('flush', options.tempBuffer)
+		options.buffer = Uint8Array.from(options.tempBuffer)
+		options.tempBuffer = []
+	}
 }
 
 export async function* stateMachineStream(eventStream, options) {
@@ -34,7 +59,11 @@ export async function* stateMachineStream(eventStream, options) {
 
 		yield {
 			state: options.state,
-			address: options.address
+			address: options.address,
+			mode: options.mode,
+			buffer: options.buffer
 		}
+
+		options.buffer = undefined
 	}
 }
