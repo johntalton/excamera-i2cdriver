@@ -29,7 +29,7 @@ export async function* normalizedEventStream(eventStream) {
 
 		if(eAccumulator.length < 3) {}
 		else if(eAccumulator.length === 3) {
-			console.log('flush accuulated')
+			//console.log('flush accuulated')
 			const { value, acked } = decodeBytes(eAccumulator)
 			const cachedEA = eAccumulator
 			eAccumulator = []

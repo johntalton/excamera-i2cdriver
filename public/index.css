@@ -166,13 +166,13 @@ nav > button:hover {
 	border-radius: 1em;
 }
 
-nav > button:last-child::after {
+/* nav > button:last-child::after {
 	display: block;
 	height: 1em;
 	width: 1em;
 	background-color: green;
 	content: "";
-}
+} */
 
 aside {
 	grid-area: aside;
@@ -266,21 +266,25 @@ main {
 
 main > section {
 	display: none;
+	grid-template-areas: "controls custom";
+	grid-template-columns: max-content 1fr;
+	align-items: start;
+	height: 100%;
+	width: 100%;
 }
 
 main > section[data-active] {
-	display: block;
-	height: 100%;
+	display: grid;
 }
 
 main > section[data-connect] {
-	display: flex;
-
-	justify-content: center;
-	align-items: flex-start;
 
 }
+
 main > section[data-connect] > button {
+	align-content: space-between;
+	grid-area: controls;
+
 	padding-inline: 2ch;
 	line-height: 2em;
 	font-size: 2em;

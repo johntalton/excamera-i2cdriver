@@ -7,7 +7,7 @@ import {
 
 import { eventStreamFromReader } from '../../src/capture-generator/index.js'
 
-// import { deviceGuessByAddress } from './devices-i2c/guesses.js'
+import { deviceGuessByAddress } from '../devices-i2c/guesses.js'
 
 export const EXCAMERA_LABS_USB_FILTER = { usbVendorId: EXCAMERA_LABS_VENDOR_ID }
 
@@ -63,6 +63,12 @@ export class ExcameraI2CDriverUIBuilder {
 
 	async close() {
 		return this.port.close()
+	}
+
+	signature() {
+		const info =  this.port.getInfo()
+
+		return `PORT(USB(${info.usbVendorId},${info.usbProductId}))`
 	}
 
 	async buildCustomView(sectionElem) {
@@ -122,14 +128,17 @@ export class ExcameraI2CDriverUIBuilder {
 
 
 					console.log('strting reader loop')
+					let prevState = undefined
+					const idleLike = state => (state === 'IDLE' || state === 'WARM')
 					for await (const event of pipeline) {
-						if(event.state === 'IDLE' || event.state === 'WARM') { continue }
+						if(idleLike(prevState) && idleLike(event.state)) { continue }
 
 						console.log(event)
 
+						prevState = event.state
 					}
 
-					const last = await await pipeline.next()
+					const last = await pipeline.next()
 					console.log('this is the aftermath of the stream', last)
 				})
 				.catch(console.warn)
@@ -161,10 +170,30 @@ export class ExcameraI2CDriverUIBuilder {
 
 						hexElem.textContent = addr.toString(16).padStart(2, '0')
 
-						return hexElem
+						const listElem = document.createElement('li')
+						listElem.textContent = addr
+
+						listElem.toggleAttribute('data-acked', acked)
+						listElem.toggleAttribute('data-arbitration', arbitration)
+						listElem.toggleAttribute('data-timedout', timedout)
+
+						const guesses = deviceGuessByAddress(addr)
+						const guessSelectElem = document.createElement('select')
+						guessSelectElem.disabled = (guesses.length <= 1)
+						guesses.forEach(guess => {
+							const guessOptionElem = document.createElement('option')
+							guessOptionElem.textContent = guess.name
+							guessSelectElem.appendChild(guessOptionElem)
+						})
+
+						listElem.setAttribute('slot', 'vdevice-guess-list')
+						listElem.appendChild(guessSelectElem)
+
+						return { hexElem, listElem }
 					})
-					.forEach(hexDisplay => {
-						addressElem.appendChild(hexDisplay)
+					.forEach(({ hexElem, listElem }) => {
+						addressElem.appendChild(hexElem)
+						root.appendChild(listElem)
 					})
 
 					scanButton.disabled = false
@@ -178,108 +207,3 @@ export class ExcameraI2CDriverUIBuilder {
 	}
 }
 
-
-/*
-
-
-			const decodeStart = (first, second, third) => {
-				const address = ((first & 0b111) << 4) |  ((second & 0b111) << 1) | ((third >> 2) & 0x1)
-				const read = (third >> 1) & 0b1 === 1
-				const acked = third & 0b1 === 1
-
-				return { start: true, address, read, acked }
-			}
-
-			function decodeByte(first, second, third) {
-				const b = ((first & 0b111) << 5) | ((second & 0b111) << 2) | ((third >> 1) & 0b11)
-				const acked = third & 0b1 === 1
-
-				return {
-						value: b, acked
-				}
-			}
-
-			const delayMs = ms => new Promise((resolve, ) => setTimeout(() => resolve(), ms))
-
-			const STATES = {
-				'IDLE': {
-					'idle': { target: 'IDLE' },
-					'start': { target: 'START' }
-				},
-				'START': {
-					'data': { target: 'ADDRESS_1', sink: true }
-				},
-				'ADDRESS_1': {
-					'data': { target: 'ADDRESS_2', sink: true }
-				},
-				'ADDRESS_2': {
-					'data': { target: 'ADDRESSED', sink: true, emitAddress: true }
-				},
-				'ADDRESSED': {
-					'data': { target: 'NOOP', sink: true }
-				},
-
-
-				'NOOP': {
-					'start': { target: 'NOOP' },
-					'stop': { target: 'NOOP' },
-					'data': { target: 'NOOP' },
-					'idle': { target: 'NOOP' }
-				}
-			}
-
-
-
-			async function* machineStates(eStream, options) {
-				for await(const aEvent of annotatedEventStream(eStream, options)) {
-					const { state, value } = aEvent
-
-					const action = STATES[options.state][state]
-					if(action === undefined) { throw new Error('unknown transition: ' + state) }
-
-					//
-					if(action.sink) {
-						options.sink = options.sink ?? []
-						options.sink = [ ...options.sink, value ]
-					}
-
-					if(options.sink?.length >= 3) {
-						const data = decodeByte(...options.sink)
-
-						options.sink = []
-
-						if(data.acked !== true) {
-							console.warn('nack data byte, error?')
-						}
-
-						yield data
-					}
-
-					//
-					if(options.state !== action.target) {
-						console.log('state transition from ' + options.state + ' to ' + action.target)
-					}
-					options.state = action.target
-
-					//
-					if(action.emitAddress) {
-						const start = decodeStart(...options.sink)
-
-						options.address = start.address
-						options.read = start.read
-						options.sink = []
-
-						if(start.acked !== true) {
-							console.warn('nack start address, error?')
-						}
-
-						yield start
-					}
-
-					if(state === 'stop') { yield aEvent }
-					if(state === 'idle') { yield aEvent }
-				}
-			}
-
-
-	*/

@@ -18,19 +18,16 @@ async function validateEvent(event, options) {
 
 async function takeActions(event, info, options) {
 	const {
-		openTransaction, closeTransaction,
-		setAddress, clearAddress,
-		bufferBytes, flushBytes
+		openTransaction,
+		clearAddress,
+		setAddress,
+		bufferBytes,
+		flushBytes,
+		closeTransaction
 	} = info
 
-
-	if(openTransaction) {}
-	if(closeTransaction) {}
-
-
-	if(setAddress) {
-		options.address = event.value >> 1
-		options.mode = event.value & 0b1 === 1 ? 'read' : 'write'
+	if(openTransaction) {
+		// Hi
 	}
 
 	if(clearAddress) {
@@ -38,13 +35,22 @@ async function takeActions(event, info, options) {
 		options.mode = undefined
 	}
 
-	const source = options.tempBuffer ?? []
-	if(bufferBytes) { options.tempBuffer = [ ...source, event.value ] }
+	if(setAddress) {
+		options.address = event.value >> 1
+		options.mode = event.value & 0b1 === 1 ? 'read' : 'write'
+	}
+
+	const source = options.bytesAccumulator ?? []
+	if(bufferBytes) { options.bytesAccumulator = [ ...source, event.value ] }
 
 	if(flushBytes) {
-		console.log('flush', options.tempBuffer)
-		options.buffer = Uint8Array.from(options.tempBuffer)
-		options.tempBuffer = []
+		options.buffer = Uint8Array.from(options.bytesAccumulator)
+		options.bytesAccumulator = []
+	}
+
+	if(closeTransaction) {
+		if(options.bytesAccumulator.length > 0) { throw new Error('unflushed buffer') }
+		// Bye
 	}
 }
 

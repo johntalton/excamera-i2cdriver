@@ -8,14 +8,13 @@ export const I2C_GUESSES =[
 	{ addresses: [ ...range(0x20, 0x27) ], name: 'mcp23xxx' },
 	{ addresses: [ 0x29 ], name: 'tcs34725' },
 	{ addresses: [ ...range(0x28, 0x2b) ], name: 'ds1841' },
-	{ addresses: [ ...range(0x28, 0x2b) ], name: 'ds3502' }, 
-	{ addresses: [ 0x2d, 0x53, 0x57 ], name: 'st25dv16k' }, 
+	{ addresses: [ ...range(0x28, 0x2b) ], name: 'ds3502' },
+	{ addresses: [ 0x2d, 0x53, 0x57 ], name: 'st25dv16k' },
 	// 0x30
 	{ addresses: [ 0x30 ], name: 'Trust M' },
 	{ addresses: [ 0x3c, 0x3d ], name: 'ssd1306' },
 	{ addresses: [ 0x3c, 0x3d ], name: 'adxl375' },
 	{ addresses: [ 0x38 ], name: 'AHT20' },
-	{ addresses: [ 0x3d ], name: 'ssd1306' },
 	// 0x40
 	{ addresses: [ ...range(0x48, 0x4b) ], name: 'ads1115' },
 	{ addresses: [ 0x4a, 0x4b ], name: 'bno085' },

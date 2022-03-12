@@ -31,6 +31,8 @@ function buildDeviceListItem(deviceListElem, builder) {
 		sectionElem.setAttribute('data-active', true)
 		sectionElem.setAttribute('data-connect', true)
 
+		sectionElem.setAttribute('data-signature', builder.signature())
+
 		const connectButtonEleme = document.createElement('button')
 		connectButtonEleme.textContent = 'Connect to Device'
 		sectionElem.appendChild(connectButtonEleme)
@@ -118,7 +120,10 @@ async function hydrateEffects() {
 //
 async function onContentLoaded() {
 	if (HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')) {
-		//console.log('Your browser supports import maps.')
+		// console.log('Your browser supports import maps.')
+	}
+	else {
+		console.error('importmap support not available')
 	}
 
 	const serialWorker = new Worker('./serial-worker.js', { type: 'module' })
