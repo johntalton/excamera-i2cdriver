@@ -10,6 +10,6 @@
     "@johntalton/i2c-port": "^1.0.0",
     "@johntalton/mcp2221": "../mcp2221",
     "@johntalton/tca9548a": "^5.0.0",
-    "@johntalton/ds3502": "^0.0.1"
+    "@johntalton/ds3502": "../ds3502"
   }
 }

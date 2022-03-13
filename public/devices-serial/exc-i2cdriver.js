@@ -29,7 +29,6 @@ async function initScript(port) {
 	}
 }
 
-
 class VBusFactory {
 	static from({ port }) {
 		// console.log('make driver over port', port)
@@ -206,13 +205,17 @@ export class ExcameraI2CDriverUIBuilder {
 							makeDeviceButton.disabled = true
 							guessSelectElem.disabled = true
 
+							const deviceGuess = guessSelectElem.value
+
 							console.warn('allocing untracked vbus ... please cleanup hooks')
 							const vbus = VBusFactory.from({ port: this.#port })
 
 							this.#ui.addI2CDevice({
+								type: deviceGuess,
 								bus: vbus,
 								address: addr
 							})
+
 
 
 						}, { once: true })

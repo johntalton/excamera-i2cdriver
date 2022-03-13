@@ -1,10 +1,25 @@
 
-import { I2CAddressedBus } from '@johntalton/and-other-delights'
 import { TCA9548Builder } from './tca9548a.js'
+import { DS3502Builder } from './ds3502.js'
+import {
+	TCA9548_INFO,
+	DS3502_INFO
+} from './guesses.js'
 
 
 export class I2CDeviceBuilderFactory {
 	static async from(definition, ui) {
-		return TCA9548Builder.builder(definition, ui)
+		const { type } = definition
+
+		if(type === TCA9548_INFO.name) {
+			return TCA9548Builder.builder(definition, ui)
+		}
+
+		if(type === DS3502_INFO.name) {
+			return DS3502Builder.builder(definition, ui)
+		}
+
+
+		throw new Error('unknown i2c devcie type: ' + type)
 	}
 }

@@ -26,19 +26,25 @@ async function readRegister(driver, addr, reg, length) {
 }
 
 async function writeRegister(driver, addr, reg, sourceBuffer) {
-	console.log('* start write', acked.dev)
-	const startOk = await driver.start(0x77, false)
-	console.log({ startOk })
+	//console.log('* start write', addr)
+	const startOk = await driver.start(addr, false)
+	//console.log({ startOk })
 
-	console.log('* write address')
-	const writeAddrOk = await driver.write(1, Uint8Array.from([0x1b]))
-	console.log({ writeAddrOk })
+	//console.log('* write address')
+	const writeAddrOk = await driver.write(1, Uint8Array.from([ reg ]))
+	//console.log({ writeAddrOk })
 
-	const writeOk = await driver.write(1, Uint8Array.from([0b0011_0011]))
-	console.log({ writeOk })
+	const length = sourceBuffer.byteLength
+	const writeOk = await driver.write(length, sourceBuffer)
+	//console.log({ writeOk })
 
-	console.log('*stop')
+	//console.log('*stop')
 	await driver.stop()
+
+	return {
+		bytesWritten: length,
+		buffer: sourceBuffer.buffer
+	}
 }
 
 async function i2cRead(driver, address, length, readBuffer) {

@@ -1,5 +1,14 @@
 import { range } from '../util/range.js'
 
+export const TCA9548_INFO = {
+	addresses: [ ...range(0x70, 0x77) ], name: 'tca9548a'
+}
+
+export const DS3502_INFO = {
+	addresses: [ ...range(0x28, 0x2b) ], name: 'ds3502'
+}
+
+
 export const I2C_GUESSES =[
 	// 0x00
 	// 0x10
@@ -8,7 +17,7 @@ export const I2C_GUESSES =[
 	{ addresses: [ ...range(0x20, 0x27) ], name: 'mcp23xxx' },
 	{ addresses: [ 0x29 ], name: 'tcs34725' },
 	{ addresses: [ ...range(0x28, 0x2b) ], name: 'ds1841' },
-	{ addresses: [ ...range(0x28, 0x2b) ], name: 'ds3502' },
+	DS3502_INFO,
 	{ addresses: [ 0x2d, 0x53, 0x57 ], name: 'st25dv16k' },
 	// 0x30
 	{ addresses: [ 0x30 ], name: 'Trust M' },
@@ -28,7 +37,7 @@ export const I2C_GUESSES =[
 	{ addresses: [ 0x62, 0x63 ], name: 'mcp4725a1'},
 	{ addresses: [ 0x68 ], name: 'pcf8523'},
 	// 0x70
-	{ addresses: [ ...range(0x70, 0x77) ], name: 'tca9548a' },
+	TCA9548_INFO,
 	{ addresses: [ 0x76, 0x77 ], name: 'boschIEU' }
 ]
 

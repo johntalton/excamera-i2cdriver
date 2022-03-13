@@ -136,7 +136,7 @@ export class ExcameraLabsI2CDriver {
 
 			// console.log({ recvLength })
 			if(recvLength <= 0) {
-				console.log('expect zero')
+				//console.log('expect zero')
 				//const trash = await defaultReader.read()
 				// console.log('trash', trash)
 				return Uint8Array.from([])

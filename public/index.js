@@ -7,6 +7,7 @@ import { I2CAddressDisplayElement } from './custom-elements/address-display.js'
 import { ExcameraI2CDriverElement } from './custom-elements/excamera-i2cdriver.js'
 import { CaptureEventElement } from './custom-elements/capture-event.js'
 import { TCA9548ConfigElement } from './custom-elements/tca9548-config.js'
+import { DS3502ConfigElement } from './custom-elements/ds3502-config.js'
 
 //
 import { EXCAMERA_LABS_USB_FILTER, ExcameraI2CDriverUIBuilder } from './devices-serial/exc-i2cdriver.js'
@@ -111,6 +112,7 @@ async function hydrateCustomElements() {
 	hydrateCustomeElementTemplateImport('addr-display', 'addr-display', I2CAddressDisplayElement)
 	hydrateCustomeElementTemplateImport('excamera-i2cdriver', 'excamera-i2cdriver', ExcameraI2CDriverElement)
 	hydrateCustomeElementTemplateImport('tca9548-config', 'tca9548-config', TCA9548ConfigElement)
+	hydrateCustomeElementTemplateImport('ds3502-config', 'ds3502-config', DS3502ConfigElement)
 }
 
 async function hydrateEffects() {
