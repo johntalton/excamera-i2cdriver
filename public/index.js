@@ -1,12 +1,18 @@
 import { hydrateSerial } from './hydrate/serial.js'
 import { hydrateUSB } from './hydrate/usb.js'
+
+//
 import { HTMLImportElement } from './custom-elements/html-import.js'
 import { I2CAddressDisplayElement } from './custom-elements/address-display.js'
 import { ExcameraI2CDriverElement } from './custom-elements/excamera-i2cdriver.js'
 import { CaptureEventElement } from './custom-elements/capture-event.js'
+import { TCA9548ConfigElement } from './custom-elements/tca9548-config.js'
 
+//
 import { EXCAMERA_LABS_USB_FILTER, ExcameraI2CDriverUIBuilder } from './devices-serial/exc-i2cdriver.js'
 import { MCP2221UIBuilder } from './devices-usb/mcp2221.js'
+//
+import { I2CDeviceBuilderFactory } from './devices-i2c/device-factory.js'
 
 const MCP2221_USB_FILTER = {
 	vendorId: 1240,
@@ -22,11 +28,15 @@ function buildDeviceListItem(deviceListElem, builder) {
 
 
 	liElem.addEventListener('click', e => {
+		deviceListElem.querySelectorAll('li').forEach(li => li.removeAttribute('data-active'))
+
 		liElem.setAttribute('data-active', true)
 		buttonElem.disabled = true
 
 		//
 		const mainElem = document.querySelector('main')
+		mainElem.querySelectorAll('section').forEach(s => s.removeAttribute('data-active'))
+
 		const sectionElem = document.createElement('section')
 		sectionElem.setAttribute('data-active', true)
 		sectionElem.setAttribute('data-connect', true)
@@ -42,7 +52,8 @@ function buildDeviceListItem(deviceListElem, builder) {
 			connectButtonEleme.disabled = true
 			connectButtonEleme.remove()
 
-			builder.open()
+			Promise.resolve()
+				.then(builder.open())
 				.then(async () => {
 
 					const closeButton = document.createElement('button')
@@ -99,6 +110,7 @@ async function hydrateCustomElements() {
 	hydrateCustomeElementTemplateImport('capture-event', 'capture-event', CaptureEventElement)
 	hydrateCustomeElementTemplateImport('addr-display', 'addr-display', I2CAddressDisplayElement)
 	hydrateCustomeElementTemplateImport('excamera-i2cdriver', 'excamera-i2cdriver', ExcameraI2CDriverElement)
+	hydrateCustomeElementTemplateImport('tca9548-config', 'tca9548-config', TCA9548ConfigElement)
 }
 
 async function hydrateEffects() {
@@ -144,7 +156,7 @@ async function onContentLoaded() {
 			if(info.usbVendorId === EXCAMERA_LABS_USB_FILTER.usbVendorId) {
 				//console.log('adding excamera i2cdriver', port)
 
-				const builder = await ExcameraI2CDriverUIBuilder.builder(port)
+				const builder = await ExcameraI2CDriverUIBuilder.builder(port, ui)
 				buildDeviceListItem(deviceListElem, builder)
 				return
 			}
@@ -158,13 +170,18 @@ async function onContentLoaded() {
 				if(device.productId == MCP2221_USB_FILTER.productId) {
 					//console.log('adding mcp2221', device)
 
-					const builder = await MCP2221UIBuilder.builder(device)
+					const builder = await MCP2221UIBuilder.builder(device, ui)
 					buildDeviceListItem(deviceListElem, builder)
 					return
 				}
 			}
-
 			//console.log('no driver for usb device', device)
+		},
+		addI2CDevice: async definition => {
+			console.log('i2c device to list', definition)
+			const builder = await I2CDeviceBuilderFactory.from(definition, ui)
+			buildDeviceListItem(deviceListElem, builder)
+			return
 		}
 	}
 

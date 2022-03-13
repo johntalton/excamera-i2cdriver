@@ -1,10 +1,7 @@
 
+// import { I2CBus } from '@johntalton/and-other-delights'
 
-
-
-
-
-async function readRegister(addr, reg, length) {
+async function readRegister(driver, addr, reg, length) {
 	console.log('> start write', addr)
 	const startOk = await driver.start(addr, false)
 	console.log({ startOk })
@@ -28,7 +25,7 @@ async function readRegister(addr, reg, length) {
 
 }
 
-async function writeRegister(addr, reg, sourceBuffer) {
+async function writeRegister(driver, addr, reg, sourceBuffer) {
 	console.log('* start write', acked.dev)
 	const startOk = await driver.start(0x77, false)
 	console.log({ startOk })
@@ -44,12 +41,7 @@ async function writeRegister(addr, reg, sourceBuffer) {
 	await driver.stop()
 }
 
-
-
-
-
-
-async function i2cRead(address, length, readBuffer) {
+async function i2cRead(driver, address, length, readBuffer) {
 	const startOk = await driver.start(address, true)
 	if (startOk.ack !== 1) { throw new Error('no start ack') }
 
@@ -63,7 +55,7 @@ async function i2cRead(address, length, readBuffer) {
 	}
 }
 
-async function i2cWrite(address, length, sourceBuffer) {
+async function i2cWrite(driver, address, length, sourceBuffer) {
 	const startOk = await driver.start(address, false)
 	if (startOk.ack !== 1) { throw new Error('no start ack') }
 
@@ -77,4 +69,46 @@ async function i2cWrite(address, length, sourceBuffer) {
 		buffer: sourceBuffer.buffer
 	}
 }
+
+
+export class I2CBusExacmeraI2CDriver {
+	#driver
+
+	static from(options) {
+		const { I2CAPI } = options
+		return new I2CBusExacmeraI2CDriver(I2CAPI)
+	}
+
+	constructor(driver) {
+		this.#driver = driver
+	}
+
+
+	close() {}
+
+	async sendByte(address, byteValue) {
+		// is this equilvilant
+		return i2cWrite(this.#driver, address, 1, Uint8Array.from([ byteValue ]))
+	}
+
+	async readI2CBlock(address, cmd, length, bufferSource) {
+		// todo read back into bufferSource and return
+		return readRegister(this.#driver, address, cmd, length)
+	}
+
+	async writeI2cBlock(address, cmd, length, bufferSource) {
+		// todo ... create view / slice buffer source to length
+		return writeRegister(this.#driver, address, cmd, bufferSource)
+	}
+
+	async i2cRead(address, length, bufferSource) {
+		return i2cRead(this.#driver, address, length, bufferSource)
+	}
+
+	async i2cWrite(address, length, bufferSource) {
+		return i2cWrite(this.#driver, address, length, bufferSource)
+	}
+}
+
+
 

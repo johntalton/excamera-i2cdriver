@@ -1,10 +1,63 @@
 
-import * as tcaModule from '../node_modules/@johntalton/tca9548a/src/index.js'
-const { Tca9548a } = tcaModule
+import { Tca9548a } from '@johntalton/tca9548a'
+import { I2CAddressedBus } from '@johntalton/and-other-delights'
 
-import { I2CAddressedBus } from '../node_modules/@johntalton/and-other-delights/lib/i2c-addressed.js'
+export class TCA9548Builder {
+	#abus
+	#device
+
+	static async builder(definition, ui) {
+		return new TCA9548Builder(definition, ui)
+	}
+
+	constructor(definition, ui) {
+		const { bus, address } = definition
+
+		this.#abus = new I2CAddressedBus(bus, address)
+	}
 
 
+	get title() { return 'TCA9548A Multiplexer' }
+
+
+	async open() {
+		this.#device = await Tca9548a.from(this.#abus, {})
+	}
+
+	async close() {}
+
+	signature() {}
+
+	async buildCustomView(selectionElem) {
+		const root = document.createElement('tca9548-config')
+
+		root.addEventListener('change', e => {
+			const { channels } = e
+			console.log('channel change request', channels)
+
+			Promise.resolve()
+				.then(async () => {
+
+				await this.#device.setChannels(channels)
+				const resultChannels = await this.#device.getChannels()
+				console.log({ resultChannels })
+
+				// const allCh = [ 0, 1, 2, 3, 4, 5, 6, 7 ]
+				// allCh.forEach(ch => {
+				// 	const on = resultChannels.includes(ch)
+				// 	console.log('set checkbox for channel', ch, on)
+				// })
+			})
+		})
+
+
+		return root
+	}
+}
+
+
+
+/*
 								const bus = {
 									i2cRead, i2cWrite
 								}
@@ -14,8 +67,8 @@ import { I2CAddressedBus } from '../node_modules/@johntalton/and-other-delights/
 								const tca9548a = await Tca9548a.from(abus, { })
 								console.log('getChannels')
 								const channels = await tca9548a.getChannels()
-								
-								
+
+
 								const tca9548aChannelsElem = document.getElementById('tca9548a_channels')
 								const chElems = {
 									ch0: document.getElementById('ch0'),
@@ -60,3 +113,5 @@ import { I2CAddressedBus } from '../node_modules/@johntalton/and-other-delights/
 
 									tca9548aChannelsElem.disable = false
 								}, { once: true })
+*/
+

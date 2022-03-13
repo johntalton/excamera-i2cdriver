@@ -6,8 +6,9 @@ import {
 } from '../../src/i2c-driver.js'
 
 import { eventStreamFromReader } from '../../src/capture-generator/index.js'
-
 import { deviceGuessByAddress } from '../devices-i2c/guesses.js'
+
+import { I2CBusExacmeraI2CDriver } from '../../i2c-bus-excamera-i2cdriver/src/i2c-bus.js'
 
 export const EXCAMERA_LABS_USB_FILTER = { usbVendorId: EXCAMERA_LABS_VENDOR_ID }
 
@@ -21,6 +22,7 @@ async function initScript(port) {
 	// ?
 
 	// echo some bytes to validate the connection
+	console.log('basic echo test for validity')
 	const echoSig = [0x55, 0x00, 0xff, 0xaa]
 	for (let echoByte of echoSig) {
 		await ExcameraLabsI2CDriver.echoByte(port, echoByte)
@@ -28,15 +30,26 @@ async function initScript(port) {
 }
 
 
+class VBusFactory {
+	static from({ port }) {
+		// console.log('make driver over port', port)
+		const I2CAPI = ExcameraLabsI2CDriver.from({ port })
+		const vbus = I2CBusExacmeraI2CDriver.from({ I2CAPI })
+		return vbus
+	}
+}
+
 export class ExcameraI2CDriverUIBuilder {
-	static async builder(port) {
-		return new ExcameraI2CDriverUIBuilder(port)
+	#port
+	#ui
+
+	static async builder(port, ui) {
+		return new ExcameraI2CDriverUIBuilder(port, ui)
 	}
 
-	constructor(port) {
-		this.port = port
-		// console.log('make driver over port', port)
-		// this.driver = ExcameraLabsI2CDriver.from({ port })
+	constructor(port, ui) {
+		this.#port = port
+		this.#ui = ui
 	}
 
 	get title() {
@@ -46,7 +59,7 @@ export class ExcameraI2CDriverUIBuilder {
 	async open() {
 		console.log('opening excamera labs port')
 		// at 1M baud, 8 bits, no parity, 1 stop bit (1000000 8N1).
-		await this.port.open({
+		await this.#port.open({
 			baudRate: 1000000,
 			dataBits: 8,
 			parity: 'none',
@@ -54,19 +67,19 @@ export class ExcameraI2CDriverUIBuilder {
 		})
 
 		// device author provided init script
-		await initScript(this.port)
+		await initScript(this.#port)
 
 		console.log('check status info')
-		const info = await ExcameraLabsI2CDriver.transmitStatusInfo(this.port)
+		const info = await ExcameraLabsI2CDriver.transmitStatusInfo(this.#port)
 		console.log(info)
 	}
 
 	async close() {
-		return this.port.close()
+		return this.#port.close()
 	}
 
 	signature() {
-		const info =  this.port.getInfo()
+		const info =  this.#port.getInfo()
 
 		return `PORT(USB(${info.usbVendorId},${info.usbProductId}))`
 	}
@@ -111,10 +124,10 @@ export class ExcameraI2CDriverUIBuilder {
 					const { signal } = controller
 
 					console.log('entering cpature mode')
-					// await ExcameraLabsI2CDriver.enterMonitorMode(this.port)
-					await ExcameraLabsI2CDriver.enterCaptureMode(this.port)
+					// await ExcameraLabsI2CDriver.enterMonitorMode(this.#port)
+					await ExcameraLabsI2CDriver.enterCaptureMode(this.#port)
 
-					const defaultReader = this.port.readable.getReader()
+					const defaultReader = this.#port.readable.getReader()
 					const pipeline = eventStreamFromReader(defaultReader, { signal })
 
 					captureEndElem.disabled = false
@@ -147,7 +160,7 @@ export class ExcameraI2CDriverUIBuilder {
 		scanButton.addEventListener('click', e => {
 			scanButton.disabled = true
 
-			ExcameraLabsI2CDriver.scan(this.port)
+			ExcameraLabsI2CDriver.scan(this.#port)
 				.then(results => {
 					const olds = addressElem.querySelectorAll('hex-display')
 					olds?.forEach(old => old.remove())
@@ -185,6 +198,24 @@ export class ExcameraI2CDriverUIBuilder {
 							guessOptionElem.textContent = guess.name
 							guessSelectElem.appendChild(guessOptionElem)
 						})
+
+						const makeDeviceButton = document.createElement('button')
+						makeDeviceButton.textContent = 'Create Device 🕹'
+						listElem.appendChild(makeDeviceButton)
+						makeDeviceButton.addEventListener('click', e => {
+							makeDeviceButton.disabled = true
+							guessSelectElem.disabled = true
+
+							console.warn('allocing untracked vbus ... please cleanup hooks')
+							const vbus = VBusFactory.from({ port: this.#port })
+
+							this.#ui.addI2CDevice({
+								bus: vbus,
+								address: addr
+							})
+
+
+						}, { once: true })
 
 						listElem.setAttribute('slot', 'vdevice-guess-list')
 						listElem.appendChild(guessSelectElem)

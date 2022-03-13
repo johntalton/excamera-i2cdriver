@@ -1,7 +1,7 @@
 import { MCP2221A } from '@johntalton/mcp2221'
 
 export class MCP2221UIBuilder {
-	static async builder(device) {
+	static async builder(device, ui) {
 		return new MCP2221UIBuilder(device)
 	}
 
