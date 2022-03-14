@@ -8,8 +8,11 @@
     "@johntalton/and-other-delights": "^6.0.0",
     "@johntalton/bitsmush": "^1.0.0",
     "@johntalton/i2c-port": "^1.0.0",
-    "@johntalton/mcp2221": "../mcp2221",
+
     "@johntalton/tca9548a": "^5.0.0",
-    "@johntalton/ds3502": "../ds3502"
+
+    "@johntalton/ds3502": "../ds3502",
+    "@johntalton/mcp2221": "../mcp2221",
+    "@johntalton/i2c-bus-mcp2221": "file:../i2c-bus-mcp2221"
   }
 }

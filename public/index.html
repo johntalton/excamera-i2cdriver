@@ -9,6 +9,11 @@
 					"@johntalton/and-other-delights": "/node_modules/@johntalton/and-other-delights/lib/aod.js",
 					"@johntalton/bitsmush": "/node_modules/@johntalton/bitsmush/lib/bitsmush.js",
 
+					"@johntalton/excamera-i2cdriver": "/src/i2c-driver.js",
+
+					"@johntalton/mcp2221": "/node_modules/@johntalton/mcp2221/lib/index.js",
+					"@johntalton/i2c-bus-mcp2221": "/node_modules/@johntalton/i2c-bus-mcp2221/lib/index.js",
+
 					"@johntalton/ds3502": "/node_modules/@johntalton/ds3502/src/index.mjs",
 					"@johntalton/mcp2221": "/node_modules/@johntalton/mcp2221/lib/index.js",
 					"@johntalton/tca9548a": "/node_modules/@johntalton/tca9548a/src/index.js"
@@ -22,6 +27,9 @@
 		<html-import
 			id="excamera-i2cdriver"
 			src="./custom-elements/excamera-i2cdriver.html"></html-import>
+		<html-import
+			id="mcp2221-config"
+			src="./custom-elements/mcp2221-config.html"></html-import>
 		<html-import
 			id="ds3502-config"
 			src="./custom-elements/ds3502-config.html"></html-import>
@@ -39,6 +47,7 @@
 		<nav>
 			<button disabled id="requestSerial">🔌 Web Serial</button>
 			<button disabled id="requestUSB">🔌 Web USB</button>
+			<button disabled id="requestHID">🔌 Web HID</button>
 		</nav>
 
 		<aside>

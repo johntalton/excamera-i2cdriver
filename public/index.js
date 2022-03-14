@@ -1,10 +1,12 @@
 import { hydrateSerial } from './hydrate/serial.js'
 import { hydrateUSB } from './hydrate/usb.js'
+import { hydrateHID } from './hydrate/hid.js'
 
 //
 import { HTMLImportElement } from './custom-elements/html-import.js'
 import { I2CAddressDisplayElement } from './custom-elements/address-display.js'
 import { ExcameraI2CDriverElement } from './custom-elements/excamera-i2cdriver.js'
+import { MCP2221ConfigElement } from './custom-elements/mcp2221-config.js'
 import { CaptureEventElement } from './custom-elements/capture-event.js'
 import { TCA9548ConfigElement } from './custom-elements/tca9548-config.js'
 import { DS3502ConfigElement } from './custom-elements/ds3502-config.js'
@@ -110,6 +112,7 @@ async function hydrateCustomElements() {
 
 	hydrateCustomeElementTemplateImport('capture-event', 'capture-event', CaptureEventElement)
 	hydrateCustomeElementTemplateImport('addr-display', 'addr-display', I2CAddressDisplayElement)
+	hydrateCustomeElementTemplateImport('mcp2221-config', 'mcp2221-config', MCP2221ConfigElement)
 	hydrateCustomeElementTemplateImport('excamera-i2cdriver', 'excamera-i2cdriver', ExcameraI2CDriverElement)
 	hydrateCustomeElementTemplateImport('tca9548-config', 'tca9548-config', TCA9548ConfigElement)
 	hydrateCustomeElementTemplateImport('ds3502-config', 'ds3502-config', DS3502ConfigElement)
@@ -146,6 +149,7 @@ async function onContentLoaded() {
 
 	const requestSerialButton = document.getElementById('requestSerial')
 	const requestUSBButton = document.getElementById('requestUSB')
+	const requestHIDButton = document.getElementById('requestHID')
 
 	const deviceListElem = document.getElementById('deviceList')
 
@@ -166,13 +170,16 @@ async function onContentLoaded() {
 			//console.log('no driver for serial port', info)
 		},
 		addUSBDevice: async device => {
-			//console.log('adUSBDevice', device.serialNumber, device.productName)
+			console.warn('no usb devices supported')
+		},
+		addHIDDevice: async hid => {
+			console.log('UI:addHID', hid.serialNumber, hid.productName)
 
-			if(device.vendorId === MCP2221_USB_FILTER.vendorId) {
-				if(device.productId == MCP2221_USB_FILTER.productId) {
-					//console.log('adding mcp2221', device)
+			if(hid.vendorId === MCP2221_USB_FILTER.vendorId) {
+				if(hid.productId == MCP2221_USB_FILTER.productId) {
+					//console.log('adding mcp2221', hid)
 
-					const builder = await MCP2221UIBuilder.builder(device, ui)
+					const builder = await MCP2221UIBuilder.builder(hid, ui)
 					buildDeviceListItem(deviceListElem, builder)
 					return
 				}
@@ -191,6 +198,7 @@ async function onContentLoaded() {
 		hydrateCustomElements(),
 		hydrateSerial(requestSerialButton, ui),
 		hydrateUSB(requestUSBButton, ui),
+		hydrateHID(requestHIDButton, ui),
 
 		hydrateEffects()
 	])
