@@ -35,6 +35,12 @@ export class MCP2221UIBuilder {
 		const binding = {
 			read: async length => {
 				// console.log('usbRead', length)
+
+				// this is a risky approuch as the binding to the
+				// single trigger event may be added after the
+				// actaully importreport event has been triggered
+				// this should be more coupled with the write command
+				// and, like other usb wappers, expos a transfer function
 				const { returnValue, reportId, data } = await onceInputReport(this.#hidDevice)
 				return data
 			},

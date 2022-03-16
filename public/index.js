@@ -13,7 +13,7 @@ import { DS3502ConfigElement } from './custom-elements/ds3502-config.js'
 
 //
 import { EXCAMERA_LABS_USB_FILTER, ExcameraI2CDriverUIBuilder } from './devices-serial/exc-i2cdriver.js'
-import { MCP2221UIBuilder } from './devices-usb/mcp2221.js'
+import { MCP2221UIBuilder } from './devices-hid/mcp2221.js'
 //
 import { I2CDeviceBuilderFactory } from './devices-i2c/device-factory.js'
 

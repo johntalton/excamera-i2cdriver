@@ -6,8 +6,8 @@ import { Waves } from '../util/wave.js'
 const delayMs = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 
-async function potScript(device, { signal }) {
-	const sinWave = Waves.sin({ signal })
+async function potScript(device, options) {
+	const sinWave = Waves.sin(options)
 	for await (const value of sinWave) {
 		await delayMs(100)
 		await device.setProfile({ WR: value })
@@ -56,7 +56,7 @@ export class DS3502Builder {
 				toggleSinButton.textContent = 'Wave 🛑'
 
 				Promise.resolve(delayMs(1))
-					.then(() => potScript(this.#device, { signal }))
+					.then(() => potScript(this.#device, { periodMs: 10 * 1000, signal }))
 					.then(() => {
 						console.log('script has ended')
 						toggleSinButton.textContent = 'Wave 🌊'

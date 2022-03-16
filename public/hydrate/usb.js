@@ -16,7 +16,9 @@ async function addUSBDevice(ui, device, devlist) {
 
 	devlist.push(device)
 
-	await ui.addUSBDevice(device)
+	console.log('add usb device')
+
+	return ui.addUSBDevice(device)
 }
 
 async function hydrateUSBBackgroundDevices(addDevice) {
