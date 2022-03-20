@@ -9,16 +9,12 @@ const SUPPORTED_HID_FILTER = [
 
 
 async function addHIDDevice(ui, device, knownDevices) {
-	console.log('EHRE', device ,knownDevices)
-
 	if(knownDevices.includes(device)) {
-		console.log('re-adding existing paired device ... ')
+		console.log('HID:addHIDDevice: re-adding existing paired device ... ')
 		return
 	}
 
-
 	knownDevices.push(device)
-	console.log('addHID', knownDevices)
 
 	return ui.addHIDDevice(device)
 }
@@ -43,7 +39,7 @@ async function requestHIDDevice(filters) {
 function requestHIDHandler(addDevice, event) {
 	requestHIDDevice(SUPPORTED_HID_FILTER)
 		.then(devices => devices.forEach(addDevice))
-		.catch(e => console.log('issues requesting hid device', e.message))
+		.catch(e => console.log('issues requesting hid device', e))
 }
 
 const build_requestHIDHandler = addDevice => event => requestHIDHandler(addDevice, event)

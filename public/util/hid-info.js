@@ -3,7 +3,7 @@
 export function dumpHIDDevice(hid) {
 	console.log('name:', hid.productName)
 	console.log('vendor: ',hid.vendorId, 'product:', hid.productId)
-	console.log('state:', hid.opend ? 'open' : 'closed')
+	console.log('state:', hid.opened ? 'open' : 'closed')
 
 	hid.collections.forEach(collection => {
 		const {
@@ -11,7 +11,7 @@ export function dumpHIDDevice(hid) {
 			inputReports, outputReports, featureReports
 		} = collection
 
-		console.log('usagePage:', usagePage, 'usage:', usage, 'type:', type)
+		console.log('usagePage:', usagePage.toString(16), 'usage:', usage, 'type:', type)
 
 		for(const ir of inputReports) {
 			console.log('input report:', ir)
