@@ -16,9 +16,10 @@
 			<button>set gpio</button>
 		</li>
 		<li id="i2c">
-			<addr-display>
-				<hex-display slot="13" acked>0x0D</hex-display>
-			</addr-display>
+			<slot name="scan-display"></slot>
+			<ul part="vdevice-guess-list">
+				<slot name="vdevice-guess-list"></slot>
+			</ul>
 			<slot name="i2c-controls"></slot>
 		</li>
 		<li id="sram">

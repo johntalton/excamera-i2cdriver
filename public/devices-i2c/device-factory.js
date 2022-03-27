@@ -1,9 +1,11 @@
 
 import { TCA9548Builder } from './tca9548a.js'
 import { DS3502Builder } from './ds3502.js'
+import { BoschIEUBuilder } from './boschieu.js'
 import {
 	TCA9548_INFO,
-	DS3502_INFO
+	DS3502_INFO,
+	BOSCH_IEU_INFO
 } from './guesses.js'
 
 
@@ -17,6 +19,10 @@ export class I2CDeviceBuilderFactory {
 
 		if(type === DS3502_INFO.name) {
 			return DS3502Builder.builder(definition, ui)
+		}
+
+		if(type === BOSCH_IEU_INFO.name) {
+			return BoschIEUBuilder.builder(definition, ui)
 		}
 
 

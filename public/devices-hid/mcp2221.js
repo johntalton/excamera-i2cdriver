@@ -1,5 +1,9 @@
 import { MCP2221A } from '@johntalton/mcp2221'
 import { dumpHIDDevice } from '../util/hid-info.js'
+import { range } from '../util/range.js'
+import { deviceGuessByAddress } from '../devices-i2c/guesses.js'
+
+const delayMs = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 async function onceInputReport(hid, timeoutMs) {
 	return new Promise((resolve, reject) => {
@@ -53,16 +57,20 @@ export class MCP2221UIBuilder {
 
 		this.#device = await MCP2221A.from(binding)
 		//await this.#device.common.reset()
-		// await this.#device.sram.set()
-		const status = await this.#device.common.status({ cancelI2c: true })
-		console.log({ status })
 
-		const sramGet = await this.#device.sram.get()
-		console.log({ sramGet })
+		// const status = await this.#device.common.status({ cancelI2c: true })
+		// console.log({ status })
 
-		 //	const flashGet = await this.#device.flash.get()
+		const speed = await this.#device.common.status({ i2cClock: 50 })
+		console.log({ speed })
 
+		//
+		await this.#device.sram.set({
+			inturrupt: { clear: true }
+		})
 
+		// const sramGet = await this.#device.sram.get()
+		// console.log({ sramGet })
 	}
 
 	async close() {
@@ -81,6 +89,11 @@ export class MCP2221UIBuilder {
 		resetI2CButton.setAttribute('slot', 'i2c-controls')
 		root.appendChild(resetI2CButton)
 
+
+		const addressElem = document.createElement('addr-display')
+		addressElem.setAttribute('slot', 'scan-display')
+		root.appendChild(addressElem)
+
 		// <button>scan </button>
 		const scanButton = document.createElement('button')
 		scanButton.textContent = 'scan 📡'
@@ -95,43 +108,155 @@ export class MCP2221UIBuilder {
 			Promise.resolve()
 				.then(async () => {
 
+					const futureScans = [ ...range(0x08, 0x77) ].map(addr => {
+						return async () => {
+							const status = await this.#device.common.status({ cancelI2c: true })
+							const result = await this.#device.i2c.writeData({ address: addr, buffer: Uint8Array.from([ 0x00 ]) })
+							const statusAfter = await this.#device.common.status({ cancelI2c: false })
+							return { addr, acked: statusAfter.i2cState === 0 }
+						}
+					})
 
-					const result = await this.#device.sram.set({
+					const serializeScan = futureScans.reduce((past, futureFn) => {
+						return past.then(async pastResults => {
+							const futureResults = await futureFn()
+							return [ ...pastResults, futureResults ]
+						})
+					}, Promise.resolve([]));
+
+					const scanResuts = await serializeScan
+
+
+					const ackedList = scanResuts.filter(({ _addr, acked }) => acked)
+					console.log(ackedList)
+
+
+					//
+					ackedList.forEach(({ addr, _acked }) => {
+
+						const hexElem = document.createElement('hex-display')
+
+						hexElem.setAttribute('slot', addr)
+
+						hexElem.toggleAttribute('acked', true)
+						// hexElem.toggleAttribute('arbitration', arbitration)
+						// hexElem.toggleAttribute('timedout', timedout)
+
+						hexElem.textContent = addr.toString(16).padStart(2, '0')
+
+						addressElem.append(hexElem)
+
+						//
+						const listElem = document.createElement('li')
+						listElem.textContent = addr
+
+						listElem.toggleAttribute('data-acked', true)
+
+						const guesses = deviceGuessByAddress(addr)
+						const guessSelectElem = document.createElement('select')
+						guessSelectElem.disabled = (guesses.length <= 1)
+						guesses.forEach(guess => {
+							const guessOptionElem = document.createElement('option')
+							guessOptionElem.textContent = guess.name
+							guessSelectElem.appendChild(guessOptionElem)
+						})
+
+						const makeDeviceButton = document.createElement('button')
+						makeDeviceButton.textContent = 'Create Device 🕹'
+						listElem.appendChild(makeDeviceButton)
+						makeDeviceButton.addEventListener('click', e => {
+
+							//
+
+
+						}, { once: true })
+
+						listElem.setAttribute('slot', 'vdevice-guess-list')
+						listElem.appendChild(guessSelectElem)
+
+						root.appendChild(listElem)
+					})
+
+
+					// const result = await this.#device.sram.set({
 					// 	// clock: {
 					// 	// 	dutyCycle: '25%',
-					// 	// 	divider: '3 MHz'
+					// 	// 	divider: '375 kHz'
 					// 	// },
+
+					// 	gp: {
+					// 		// dac: {
+					// 		// 	referenceVoltage: '4.096V',
+					// 		// 	referenceOptions: 'Vrm',
+					// 		// 	initialValue: 31
+					// 		// },
+					// 		// adc: {},
+					// 		interrupt: { clear: true }
+					// 	},
 
 					// 	gpio0: {
 					// 		designation: 'SSPND',
-					// 		direction: 'out'
+					// 		direction: 'in'
 					// 	},
+
+					// 	// gpio0: {
+					// 	// 	designation: 'ADC_1',
+					// 	// 	direction: 'in'
+					// 	// },
 
 					// 	gpio1: {
-					// 		designation: 'Gpio',
+					// 		designation: 'Interrupt Detection',
 					// 		direction: 'in'
 					// 	},
+
+					// 	// gpio1: {
+					// 	// 	designation: 'Clock Output',
+					// 	// 	direction: 'out'
+					// 	// }
+					// 	// gpio1: {
+					// 	// 	designation: 'ADC1',
+					// 	// 	direction: 'in'
+					// 	// },
+
 					// 	gpio2: {
-					// 		designation: 'Gpio',
+					// 		designation: 'ADC2',
 					// 		direction: 'in'
 					// 	},
+
+					// // // 	gpio3: {
+					// // // 		designation: 'LED I2C',
+					// // // 		direction: 'out'
+					// // // 	}
 
 					// 	gpio3: {
-					// 		designation: 'LED I2C',
-					// 		direction: 'out'
+					// 		designation: 'DAC2',
+					// 		direction: 'out',
+					// 		outputValue: 1
 					// 	}
 
-					})
+					// })
 					// console.log(result)
 
-					const sramGet = await this.#device.sram.get()
-					console.log(sramGet)
 
-					const gpioInfo = await this.#device.gpio.get()
-					console.log(gpioInfo)
 
-					const status = await this.#device.common.status({ cancelI2c: true })
-					console.log({ status })
+					// for(let i = 0; i < 60; i++) {
+					// 	const initialValue =  (i % 10) + 22
+					// 	await this.#device.sram.set({ gp: { dac: { initialValue } } })
+					//   await delayMs(75)
+					// 	//const stat = await this.#device.sram.get()
+					// 	//console.log(stat)
+					// }
+
+
+					// const sramGet = await this.#device.sram.get()
+					// console.log(sramGet)
+
+
+					// const gpioInfo = await this.#device.gpio.get()
+					// console.log(gpioInfo)
+
+					// const status = await this.#device.common.status({ })
+					// console.log({ status })
 
 
 
@@ -180,7 +305,72 @@ export class MCP2221UIBuilder {
 
 		}, { once: true })
 
+		resetI2CButton.addEventListener('click', e => {
+			Promise.resolve()
+				.then(async () => {
 
+
+					// const can = await this.#device.common.status({ cancelI2c: true })
+					// console.log({  can  })
+					// await delayMs(100)
+
+					// const speed = await this.#device.common.status({ i2cClock: 100 })
+					// console.log({ speed })
+					// await delayMs(100)
+
+					//await this.#device.common.status({ cancelI2c: true })
+
+					const wresult = await this.#device.i2c.writeData({ address: 0x77, buffer: Uint8Array.from([ 0x00 ]) })
+					console.log(wresult)
+
+					// for(let i = 0; i < 10; i += 1) {
+					// 	await delayMs(100)
+						const statis = await this.#device.common.status()
+						console.log(statis)
+					// }
+
+					const result = await this.#device.i2c.readData({ address: 0x77, length: 1 })
+					console.log(result)
+
+					const data = await this.#device.i2c.readGetData()
+					console.log(data)
+
+
+
+
+
+					// const defaults = {
+					// 	manufacturer: 'Microchip Technology Inc.',
+					// 	product: 'MCP2221 USB-I2C/UART Combo',
+					// 	serial: '0002137055'
+					// }
+
+					// const cs = await this.#device.flash.readChipSettings()
+					// console.log(cs)
+
+					// const gs = await this.#device.flash.readGPSettings()
+					// console.log(gs)
+
+					// const um = await this.#device.flash.readUSBManufacturer()
+					// const up = await this.#device.flash.readUSBProduct()
+					// const us = await this.#device.flash.readUSBSerialNumber()
+					// const fsn = await this.#device.flash.readFactorySerialNumber()
+					// console.log({ um, up, us, fsn })
+
+
+					// const prod = '<b>MCP2221</b>'
+					// await this.#device.flash.writeUSBProduct({ descriptor: prod })
+					// const afterP = await this.#device.flash.readUSBProduct()
+					// console.log(afterP)
+
+					// const str = '👩🏻‍❤️‍💋‍👩🏻'
+					// await this.#device.flash.writeUSBManufacturer({ descriptor: str })
+					// const afterM = await this.#device.flash.readUSBManufacturer()
+					// console.log(afterM)
+
+
+				})
+		}, { once: true })
 
 		return root
 	}

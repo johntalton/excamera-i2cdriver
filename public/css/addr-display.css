@@ -4,6 +4,8 @@ addr-display {
   color: rgb(100, 100, 100);
 
   border-radius: 1em;
+
+  width: min-content;
 }
 
 addr-display::part(list) {

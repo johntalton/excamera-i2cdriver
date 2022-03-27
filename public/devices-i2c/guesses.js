@@ -8,6 +8,10 @@ export const DS3502_INFO = {
 	addresses: [ ...range(0x28, 0x2b) ], name: 'ds3502'
 }
 
+export const BOSCH_IEU_INFO = {
+	addresses: [ 0x76, 0x77 ], name: 'boschIEU'
+}
+
 
 export const I2C_GUESSES =[
 	// 0x00
@@ -38,7 +42,7 @@ export const I2C_GUESSES =[
 	{ addresses: [ 0x68 ], name: 'pcf8523'},
 	// 0x70
 	TCA9548_INFO,
-	{ addresses: [ 0x76, 0x77 ], name: 'boschIEU' }
+	BOSCH_IEU_INFO
 ]
 
 export function deviceGuessByAddress(address) {

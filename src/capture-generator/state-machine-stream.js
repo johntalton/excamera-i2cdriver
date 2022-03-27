@@ -49,7 +49,7 @@ async function takeActions(event, info, options) {
 	}
 
 	if(closeTransaction) {
-		if(options.bytesAccumulator.length > 0) { throw new Error('unflushed buffer') }
+		if(options.bytesAccumulator !== undefined && options.bytesAccumulator.length > 0) { throw new Error('unflushed buffer') }
 		// Bye
 	}
 }
