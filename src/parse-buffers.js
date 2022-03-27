@@ -1,5 +1,3 @@
-
-
 const PULLUP_0_0_K = 0b000
 const PULLUP_2_2_K = 0b001
 const PULLUP_4_3_K = 0b010
@@ -19,7 +17,6 @@ const PULLUP_LOOKUP = {
 	[PULLUP_2_2_K_ALT]: '2.2K (alt)',
 	[PULLUP_1_1_K]: '1.1K'
 }
-
 
 export class ResponseBufferPasrser {
 	static parsePullup(b) {
@@ -53,7 +50,7 @@ export class ResponseBufferPasrser {
 			pullups,
 			crc
 		] = str.slice(1, -1).split(' ')
-	
+
 		return {
 			identifier,
 			serial,
@@ -83,7 +80,7 @@ export class ResponseBufferPasrser {
 		const ack_mask = 0b001
 
 		const b = buffer[0]
-		
+
 		const valid = ((b >> 3) & reserved5) === reserved5
 
 		return {

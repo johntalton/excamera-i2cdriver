@@ -1,19 +1,13 @@
 {
   "name": "@johntalton/excamera-i2cdriver",
   "type": "module",
+  "exports": {
+    ".": "./src/i2c-driver.js",
+    "./capture": "./src/capture-generator/index.js",
+    "./package.json": "./package.json"
+  },
   "scripts": {
-    "serv": "http-server --gzip -c-1  ."
   },
   "dependencies": {
-    "@johntalton/and-other-delights": "^6.0.0",
-    "@johntalton/bitsmush": "^1.0.0",
-    "@johntalton/i2c-port": "^1.0.0",
-
-    "@johntalton/tca9548a": "^5.0.0",
-
-    "@johntalton/boschieu": "../boschieu",
-    "@johntalton/ds3502": "../ds3502",
-    "@johntalton/mcp2221": "../mcp2221",
-    "@johntalton/i2c-bus-mcp2221": "file:../i2c-bus-mcp2221"
   }
 }
