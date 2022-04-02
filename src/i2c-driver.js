@@ -1,6 +1,7 @@
 import { ResponseBufferPasrser } from './parse-buffers.js'
 
 export const EXCAMERA_LABS_VENDOR_ID = 0x0403
+export const EXCAMERA_LABS_PRODUCT_ID = 0x6015
 export const EXCAMERA_LABS_MINI_PRODUCT_ID = 0x6015
 
 const COMMAND_MASK_READ_NACK_FINAL = 0x80
@@ -62,7 +63,7 @@ export class ExcameraLabsI2CDriver {
 			stop: async () => ExcameraLabsI2CDriver.stop(port),
 			readACKAll: async (count) => ExcameraLabsI2CDriver.readACKAll(port, count),
 			readNACKFinal: async (count) => ExcameraLabsI2CDriver.readNACKFinal(port, count),
-			write: async (count, sourceBuffer) => ExcameraLabsI2CDriver.write(port, count, sourceBuffer),
+			write: async (count, bufferSource) => ExcameraLabsI2CDriver.write(port, count, bufferSource),
 
 			readRegister: async (port, dev, addr, count) => ExcameraLabsI2CDriver.readRegister(port, dev, addr, count)
 		}
@@ -210,7 +211,7 @@ export class ExcameraLabsI2CDriver {
 		return ExcameraLabsI2CDriver.sendRecvCommand(port, command, undefined, count)
 	}
 
-	static async write(port, count, sourceBuffer) {
+	static async write(port, count, bufferSource) {
 		const count_mask = 0b00111111
 
 		const countMinusOne = count - 1
@@ -220,7 +221,7 @@ export class ExcameraLabsI2CDriver {
 
 		const command = COMMAND_MASK_WRITE | countMinusOne
 
-		return ResponseBufferPasrser.parseStart(await ExcameraLabsI2CDriver.sendRecvCommand(port, command, sourceBuffer, COMMAND_REPLY_LENGTH_SINGLE_BYTE))
+		return ResponseBufferPasrser.parseStart(await ExcameraLabsI2CDriver.sendRecvCommand(port, command, bufferSource, COMMAND_REPLY_LENGTH_SINGLE_BYTE))
 	}
 
 	static async readACKAll(port, count) {
