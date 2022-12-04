@@ -65,7 +65,11 @@ export class ExcameraLabsI2CDriver {
 			readNACKFinal: async (count) => ExcameraLabsI2CDriver.readNACKFinal(port, count),
 			write: async (count, bufferSource) => ExcameraLabsI2CDriver.write(port, count, bufferSource),
 
-			readRegister: async (port, dev, addr, count) => ExcameraLabsI2CDriver.readRegister(port, dev, addr, count)
+			readRegister: async (dev, addr, count) => ExcameraLabsI2CDriver.readRegister(port, dev, addr, count),
+
+			resetBus: async () => ExcameraLabsI2CDriver.resetBus(port),
+
+			_transmitStatusInfo: async () => ExcameraLabsI2CDriver.transmitStatusInfo(port),
 		}
 	}
 
@@ -101,6 +105,70 @@ export class ExcameraLabsI2CDriver {
 	}
 
 
+	static async #streamChunkRead(defaultReader, recvLength) {
+		const timer = setTimeout(() => {
+			console.log('timeout')
+			defaultReader.cancel()
+		}, 2000)
+
+		const acc = []
+		const accSize = () => {
+			return acc.map(a => a.length).reduce((sum, length) => sum += length, 0)
+		}
+
+		while(true) {
+			// console.log('await read')
+			const { value, done } = await defaultReader.read()
+
+			if(done) {
+				// console.log('DONE', value)
+				break
+			}
+
+			//console.log('accumulate value', value, accSize(), recvLength)
+			acc.push([...value])
+
+			if(accSize() >= recvLength) {
+				// console.log('OVERSIZE')
+				break
+			}
+		}
+
+		clearTimeout(timer)
+
+		//console.log({ acc })
+		return Uint8Array.from(acc.reduce((flat, a) => {
+			return [ ...flat, ...a ]
+		}, []))
+	}
+
+	static async #streamChunkRead_Alt(defaultReader, recvLength) {
+
+			const chunkRead = async (prevSize, { value, done }) => {
+				console.log('chunkRead', value, done)
+				if(done) {
+					console.log('exit read on done')
+					return value
+				}
+
+				const readSize = prevSize + value.byteLength
+				if(readSize >= recvLength) {
+					console.log('exit read on size')
+					return value
+				}
+
+				console.log('reading chunk:', done, readSize)
+				return Uint8Array.from([ ...value, ...await chunkRead(readSize, await defaultReader.read()) ])
+			}
+
+			console.log('read first')
+
+			const firstRead = await defaultReader.read()
+			console.log('first chunk read', firstRead)
+			return await chunkRead(0, firstRead)
+	}
+
+
 	static async sendRecvTextCommand(port, textCommand, sendBuffer, recvLength) {
 		const encoder = new TextEncoder()
 		const encoded = encoder.encode(textCommand, { stream: false })
@@ -112,7 +180,11 @@ export class ExcameraLabsI2CDriver {
 
 	static async sendRecvCommand(port, command, sendBuffer, recvLength) {
 		// console.log('reader state', port.readable.locked, command, sendBuffer, recvLength)
-		if(port.readable.locked) { console.warn('locked reader ...') }
+		if(port.readable.locked) {
+			console.warn('locked reader ...')
+
+			throw new Error('locked reader')
+		}
 
 		const defaultWriter = port.writable.getWriter()
 		const defaultReader = port.readable.getReader()
@@ -131,47 +203,26 @@ export class ExcameraLabsI2CDriver {
 			}
 
 			//
-			//console.log('close writer')
-			await defaultWriter.ready
-			await defaultWriter.close()
+			// console.log('close writer')
+			// await defaultWriter.ready
+			// await defaultWriter.close()
 
 			// console.log({ recvLength })
-			if(recvLength <= 0) {
-				//console.log('expect zero')
-				//const trash = await defaultReader.read()
-				// console.log('trash', trash)
+			if(recvLength === undefined || recvLength <= 0) {
+				// console.log('expect zero')
 				return Uint8Array.from([])
 			}
 
-			const chunkRead = async (prevSize, { value, done }) => {
-				if(done) {
-					// console.log('exit read on done')
-					return value
-				}
-
-				const readSize = prevSize + value.byteLength
-				if(readSize >= recvLength) {
-					// console.log('exit read on size')
-					return value
-				}
-
-				// console.log('reading chunk:', done, readSize)
-				return Uint8Array.from([ ...value, ...await chunkRead(readSize, await defaultReader.read()) ])
-			}
-
-			const firstRead = await defaultReader.read()
-			// console.log('first chunk read', firstRead)
-			return await chunkRead(0, firstRead)
+			return await ExcameraLabsI2CDriver.#streamChunkRead(defaultReader, recvLength)
 		}
 		catch(e) {
 			console.warn(e)
 			return Uint8Array.from([])
 		}
 		finally {
-			//defaultReader.releaseLock()
-			await defaultReader.cancel()
-
-			defaultWriter.releaseLock()
+			// console.log('finally')
+			await defaultReader.releaseLock()
+			await defaultWriter.releaseLock()
 		}
 	}
 
