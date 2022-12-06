@@ -191,12 +191,17 @@ export class ExcameraLabsI2CDriver {
 
 		try {
 			//
-			//console.log('write encoded command', command)
+			// console.log('write encoded command', command)
 			await defaultWriter.ready
 
 			if(sendBuffer) {
-				//console.log('sending buffer', Uint8Array.from([ command, ...sendBuffer ]))
-				await defaultWriter.write(Uint8Array.from([ command, ...sendBuffer ]))
+				const sb8 = ArrayBuffer.isView(sendBuffer) ?
+					new Uint8Array(sendBuffer.buffer, sendBuffer.byteOffset, sendBuffer.byteLength) :
+					new Uint8Array(sendBuffer)
+
+				// console.log('sending buffer', sb8)
+
+				await defaultWriter.write(Uint8Array.from([ command, ...sb8 ]))
 			}
 			else {
 				await defaultWriter.write(Uint8Array.from([ command ]))
@@ -250,7 +255,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	static async readNACKFinal(port, count) {
-		const count_mask = 0b00111111
+		const count_mask = 0b0011_1111
 
 		const countMinusOne = count - 1
 
@@ -263,6 +268,8 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	static async write(port, count, bufferSource) {
+		// console.log('---i2c-driver:write', count, bufferSource)
+
 		const count_mask = 0b00111111
 
 		const countMinusOne = count - 1
