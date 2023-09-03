@@ -91,14 +91,14 @@ export class ExcameraLabsI2CDriver {
 
 			//
 			enterMonitorMode: async () => ExcameraLabsI2CDriver.enterMonitorMode(port),
-			exiterMonitorMode: async () => ExcameraLabsI2CDriver.exiterMonitorMode(port),
+			exitMonitorMode: async () => ExcameraLabsI2CDriver.exitMonitorMode(port),
 
 			//
 			enterCaptureMode: async () => ExcameraLabsI2CDriver.enterCaptureMode(port),
 
 			//
 			enterBitbangMode: async () => ExcameraLabsI2CDriver.enterBitbangMode(port),
-			exitBitbangMode: async () => ExcameraLabsI2CDriver.foexitBitbangModeo(port),
+			exitBitbangMode: async () => ExcameraLabsI2CDriver.exitBitbangModeo(port),
 			sendBitbangCommand: async command => ExcameraLabsI2CDriver.sendBitbangCommand(port, command),
 			endBitbangCommand: async () => ExcameraLabsI2CDriver.endBitbangCommand(port),
 		}
@@ -319,11 +319,18 @@ export class ExcameraLabsI2CDriver {
 		return ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_BITBANG_ENTER_MODE, undefined, COMMAND_REPLY_LENGTH_NONE)
 	}
 
-	static async sendBitbangCommand(port, command) {
-
+	static async sendBitbangCommand(port, commands) {
 		//
-		const controlSequence = 0
-		return ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_BITBANG_CONTROL, Int8Array.from([ controlSequence ]), COMMAND_REPLY_LENGTH_NONE)
+		const buffer = Uint8Array.from([ ...commands.map(command => {
+			const controlSequence = command & 0b000_1_11_11
+			return controlSequence
+		}), 0x40 ])
+
+		const recvLength = commands.filter(command => (command & 0b000_1_00_00) === 0b000_1_00_00).length
+
+		// console.log({ buffer, recvLength })
+
+		return ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_BITBANG_CONTROL, buffer, recvLength)
 	}
 
 	static async endBitbangCommand(port) {
@@ -336,7 +343,7 @@ export class ExcameraLabsI2CDriver {
 
 	static async setPullupControls(port, sda, scl) {
 		const b = (scl << 3) | sda
-		return ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_SET_PULLUP_CONTROL, Int8Array.from([ b ]), COMMAND_REPLY_LENGTH_NONE)
+		return ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_SET_PULLUP_CONTROL, Uint8Array.from([ b ]), COMMAND_REPLY_LENGTH_NONE)
 
 	}
 
