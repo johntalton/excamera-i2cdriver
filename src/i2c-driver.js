@@ -178,6 +178,7 @@ export class ExcameraLabsI2CDriver {
 		return this.sendRecvCommand(port, command, sendBuffer, recvLength)
 	}
 
+	/** @param {SerialPort} port  */
 	static async sendRecvCommand(port, command, sendBuffer, recvLength) {
 		// console.log('reader state', port.readable.locked, command, sendBuffer, recvLength)
 		if(port.readable.locked) {

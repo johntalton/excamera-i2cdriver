@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "octocat"
+    commit-message:
+      # Prefix all commit messages with "npm"
+      prefix: "NPM"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "octocat"
+    commit-message:
+      prefix: "GitHub-Actions"

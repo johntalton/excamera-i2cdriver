@@ -1,0 +1,19 @@
+name: Publish (NPM / GitHub)
+on:
+  release:
+    types: [created]
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    # Publish to NPM
+    - uses: actions/setup-node@v4.0.2
+      with:
+        registry-url: 'https://registry.npmjs.org/'
+    - run: npm install
+    - run: npm run build --if-present
+    - run: npm run format --if-present
+    - run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
