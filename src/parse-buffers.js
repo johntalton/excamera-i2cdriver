@@ -18,13 +18,31 @@ const PULLUP_LOOKUP = {
 	[PULLUP_1_1_K]: '1.1K'
 }
 
-export class ResponseBufferPasrser {
-	static parsePullup(b) {
-		const pullup_mask = 0b111
-		const sda = b & pullup_mask
-		const scl = (b >> 3) & pullup_mask
+export function* range(start, end) {
+	yield start
+	if(start === end) { return }
+	yield *range(start + 1, end)
+}
+
+function assertByteLength(buffer, length) {
+	if(buffer.byteLength !== length) { throw new Error('invalid byte length') }
+}
+
+function assertNonZeroByteLength(buffer) {
+	if(buffer.byteLength <= 0) { throw new Error('zero length buffer') }
+}
+
+
+export class ResponseBufferParser {
+	/** @param {number} value  */
+	static _parsePullup(value) {
+
+		const PULL_UP_MASK = 0b111
+
+		const sda = value & PULL_UP_MASK
+		const scl = (value >> 3) & PULL_UP_MASK
 		return {
-			b,
+			value,
 			sda: PULLUP_LOOKUP[sda],
 			sdaValue: sda,
 			scl: PULLUP_LOOKUP[scl],
@@ -32,6 +50,7 @@ export class ResponseBufferPasrser {
 		}
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
 	static parseTransmitStatusInfo(buffer) {
 		const decoder = new TextDecoder()
 		const str = decoder.decode(buffer)
@@ -62,63 +81,97 @@ export class ResponseBufferPasrser {
 			sda: parseInt(sda, 2),
 			scl: parseInt(scl, 2),
 			speed: parseInt(speed, 10),
-			pullups: ResponseBufferPasrser.parsePullup(parseInt(pullups, 16)),
+			pullups: ResponseBufferParser._parsePullup(parseInt(pullups, 16)),
 			crc: parseInt(crc, 16) //  CRC-16-CCITT
 		}
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
 	static parseEchoByte(buffer) {
-		if(buffer.byteLength <= 0) { throw new Error('length missmatch') }
-		return buffer[0]
+		assertNonZeroByteLength(buffer)
+
+		const u8 = ArrayBuffer.isView(buffer) ?
+			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+			new Uint8Array(buffer)
+
+		return u8[0]
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
 	static parseStart(buffer) {
-		if(buffer.byteLength !== 1) { throw new Error('length missmatch') }
-		const reserved5 = 0b00110
-		const arb_mask = 0b100
-		const to_mask = 0b010
-		const ack_mask = 0b001
+		assertByteLength(buffer, 1)
 
-		const b = buffer[0]
+		const u8 = ArrayBuffer.isView(buffer) ?
+			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+			new Uint8Array(buffer)
 
-		const valid = ((b >> 3) & reserved5) === reserved5
+		const RESERVED_5_MASK = 0b00110
+		const ARBITRATION_MASK = 0b100
+		const TO_MASK = 0b010
+		const ACK_MASK = 0b001
+
+		const [ b ] = u8
+
+		const valid = ((b >> 3) & RESERVED_5_MASK) === RESERVED_5_MASK
 
 		return {
 			valid,
-			arb: b & arb_mask,
-			to: b & to_mask,
-			ack: b & ack_mask
+			arb: b & ARBITRATION_MASK,
+			to: b & TO_MASK,
+			ack: b & ACK_MASK
 		}
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
 	static parseRegister(buffer) {
-		if(buffer.byteLength !== 1) { throw new Error('length missmatch') }
-		return buffer[0]
+		assertByteLength(buffer, 1)
+
+		const u8 = ArrayBuffer.isView(buffer) ?
+			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+			new Uint8Array(buffer)
+
+		return u8[0]
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
 	static parseResetBus(buffer) {
-		const sda_mask = 0b10
-		const scl_mask = 0b01
-		const b = buffer[0]
-		const sda = b & sda_mask
-		const scl = b & scl_mask
+		assertByteLength(buffer, 1)
+
+		const u8 = ArrayBuffer.isView(buffer) ?
+			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+			new Uint8Array(buffer)
+
+		const [ b ] = u8
+
+		const SDA_MASK = 0b10
+		const SCL_MASK = 0b01
+
+		const sda = b & SDA_MASK
+		const scl = b & SCL_MASK
+
 		return {
 			sda, scl
 		}
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
 	static parseScan(buffer) {
-		const startDev = 0x08
-		// scan range 0x08 to 0x77
+		assertByteLength(buffer, 112)
 
-		if(buffer.byteLength !== 112) { throw new Error('length missmatch') }
+		const u8 = ArrayBuffer.isView(buffer) ?
+			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+			new Uint8Array(buffer)
 
-		return [ ...buffer ]
-			.map(b => ResponseBufferPasrser.parseStart(Uint8Array.from([ b ])))
-			.map((result, index) => ({
-				...result,
-				dev: startDev + index
-			}))
+		const SCAN_START_ADDRESS = 0x08 // scan range 0x08 to 0x77
+
+		return range(0, u8.byteLength - 1)
+			.map(index => {
+				const result =  ResponseBufferParser.parseStart(u8.subarray(index, index + 1))
+				return {
+					...result,
+					dev: SCAN_START_ADDRESS + index
+				}
+			})
 	}
 
 	static parseInternalStatus(buffer) {

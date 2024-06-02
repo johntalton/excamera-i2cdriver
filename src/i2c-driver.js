@@ -1,4 +1,4 @@
-import { ResponseBufferPasrser } from './parse-buffers.js'
+import { ResponseBufferParser } from './parse-buffers.js'
 
 export const EXCAMERA_LABS_VENDOR_ID = 0x0403
 export const EXCAMERA_LABS_PRODUCT_ID = 0x6015
@@ -54,55 +54,59 @@ const COMMAND_REPLY_LENGTH_SCAN = 112
 const COMMAND_REPLY_LENGTH_TRANSMIT_STATUS_INFO = 80
 const COMMAND_REPLY_LENGTH_INTERNAL_STATE = 80
 
+export class ExcameraLabsI2CDriverI2C {
+	#port
+
+	static from(options) { return new ExcameraLabsI2CDriverI2C(options) }
+
+	/**
+	 * @param {SerialPort} port
+	 */
+	constructor({ port }) { this.#port = port }
+
+	async start(dev, readMode) { return ExcameraLabsI2CDriver.start(this.#port, dev, readMode) }
+	async stop() { return ExcameraLabsI2CDriver.stop(this.#port) }
+	async readACKAll(count) { return ExcameraLabsI2CDriver.readACKAll(this.#port, count) }
+	async readNACKFinal(count) { return ExcameraLabsI2CDriver.readNACKFinal(this.#port, count) }
+	async write(count, bufferSource) { return ExcameraLabsI2CDriver.write(this.#port, count, bufferSource) }
+
+	async readRegister(dev, addr, count) { return ExcameraLabsI2CDriver.readRegister(this.#port, dev, addr, count) }
+	async resetBus() { return ExcameraLabsI2CDriver.resetBus(this.#port) }
+	async transmitStatusInfo() { return ExcameraLabsI2CDriver.transmitStatusInfo(this.#port) }
+}
+
 
 export class ExcameraLabsI2CDriver {
-	static from({ port }) {
-		return {
-			//
-			start: async (dev, readMode) => ExcameraLabsI2CDriver.start(port, dev, readMode),
-			stop: async () => ExcameraLabsI2CDriver.stop(port),
-			readACKAll: async (count) => ExcameraLabsI2CDriver.readACKAll(port, count),
-			readNACKFinal: async (count) => ExcameraLabsI2CDriver.readNACKFinal(port, count),
-			write: async (count, bufferSource) => ExcameraLabsI2CDriver.write(port, count, bufferSource),
+	// static controlFrom({ port }) {
+	// 	return {
+	// 		//
+	// 		reboot: async () => ExcameraLabsI2CDriver.reboot(port),
 
-			readRegister: async (dev, addr, count) => ExcameraLabsI2CDriver.readRegister(port, dev, addr, count),
+	// 		//
+	// 		transmitStatusInfo: async () => ExcameraLabsI2CDriver.transmitStatusInfo(port),
+	// 		internalState: async () => ExcameraLabsI2CDriver.internalState(port),
+	// 		echoByte: async b => ExcameraLabsI2CDriver.echoByte(port, b),
 
-			resetBus: async () => ExcameraLabsI2CDriver.resetBus(port),
+	// 		//
+	// 		setPullupControls: async (sda, scl) => ExcameraLabsI2CDriver.setPullupControls(port, sda, scl),
+	// 		setSpeed: async speed => ExcameraLabsI2CDriver.setSpeed(port, speed),
+	// 		resetBus: async () => ExcameraLabsI2CDriver.resetBus(port),
+	// 		scan: async () => ExcameraLabsI2CDriver.scan(port),
 
-			_transmitStatusInfo: async () => ExcameraLabsI2CDriver.transmitStatusInfo(port),
-		}
-	}
+	// 		//
+	// 		enterMonitorMode: async () => ExcameraLabsI2CDriver.enterMonitorMode(port),
+	// 		exitMonitorMode: async () => ExcameraLabsI2CDriver.exitMonitorMode(port),
 
-	static controlFrom({ port }) {
-		return {
-			//
-			reboot: async () => ExcameraLabsI2CDriver.reboot(port),
+	// 		//
+	// 		enterCaptureMode: async () => ExcameraLabsI2CDriver.enterCaptureMode(port),
 
-			//
-			transmitStatusInfo: async () => ExcameraLabsI2CDriver.transmitStatusInfo(port),
-			internalState: async () => ExcameraLabsI2CDriver.internalState(port),
-			echoByte: async b => ExcameraLabsI2CDriver.echoByte(port, b),
-
-			//
-			setPullupControls: async (sda, scl) => ExcameraLabsI2CDriver.setPullupControls(port, sda, scl),
-			setSpeed: async speed => ExcameraLabsI2CDriver.setSpeed(port, speed),
-			resetBus: async () => ExcameraLabsI2CDriver.resetBus(port),
-			scan: async () => ExcameraLabsI2CDriver.scan(port),
-
-			//
-			enterMonitorMode: async () => ExcameraLabsI2CDriver.enterMonitorMode(port),
-			exitMonitorMode: async () => ExcameraLabsI2CDriver.exitMonitorMode(port),
-
-			//
-			enterCaptureMode: async () => ExcameraLabsI2CDriver.enterCaptureMode(port),
-
-			//
-			enterBitbangMode: async () => ExcameraLabsI2CDriver.enterBitbangMode(port),
-			exitBitbangMode: async () => ExcameraLabsI2CDriver.exitBitbangModeo(port),
-			sendBitbangCommand: async command => ExcameraLabsI2CDriver.sendBitbangCommand(port, command),
-			endBitbangCommand: async () => ExcameraLabsI2CDriver.endBitbangCommand(port),
-		}
-	}
+	// 		//
+	// 		enterBitbangMode: async () => ExcameraLabsI2CDriver.enterBitbangMode(port),
+	// 		exitBitbangMode: async () => ExcameraLabsI2CDriver.exitBitbangMode(port),
+	// 		sendBitbangCommand: async command => ExcameraLabsI2CDriver.sendBitbangCommand(port, command),
+	// 		endBitbangCommand: async () => ExcameraLabsI2CDriver.endBitbangCommand(port),
+	// 	}
+	// }
 
 
 	static async #streamChunkRead(defaultReader, recvLength) {
@@ -111,24 +115,19 @@ export class ExcameraLabsI2CDriver {
 			defaultReader.cancel()
 		}, 2000)
 
-		const acc = []
-		const accSize = () => {
-			return acc.map(a => a.length).reduce((sum, length) => sum += length, 0)
+		const scratch = {
+			accumulator: [],
+			length: 0
 		}
 
 		while(true) {
-			// console.log('await read')
 			const { value, done } = await defaultReader.read()
+			if(done) { break }
 
-			if(done) {
-				// console.log('DONE', value)
-				break
-			}
+			scratch.accumulator.push(value)
+			scratch.length += value.length
 
-			//console.log('accumulate value', value, accSize(), recvLength)
-			acc.push([...value])
-
-			if(accSize() >= recvLength) {
+			if(scratch.length >= recvLength) {
 				// console.log('OVERSIZE')
 				break
 			}
@@ -137,9 +136,10 @@ export class ExcameraLabsI2CDriver {
 		clearTimeout(timer)
 
 		//console.log({ acc })
-		return Uint8Array.from(acc.reduce((flat, a) => {
-			return [ ...flat, ...a ]
-		}, []))
+		// return Uint8Array.from(acc.reduce((flat, a) => {
+		// 	return [ ...flat, ...a ]
+		// }, []))
+		return (new Blob(scratch.accumulator)).arrayBuffer()
 	}
 
 	static async #streamChunkRead_Alt(defaultReader, recvLength) {
@@ -178,13 +178,17 @@ export class ExcameraLabsI2CDriver {
 		return this.sendRecvCommand(port, command, sendBuffer, recvLength)
 	}
 
-	/** @param {SerialPort} port  */
+	/**
+	 * @param {SerialPort} port
+	 * @param {ArrayBufferLike|ArrayBufferView} sendBuffer
+	*/
 	static async sendRecvCommand(port, command, sendBuffer, recvLength) {
 		// console.log('reader state', port.readable.locked, command, sendBuffer, recvLength)
 		if(port.readable.locked) {
 			console.warn('locked reader ...')
 
-			throw new Error('locked reader')
+			return new ArrayBuffer(0)
+			//throw new Error('locked reader')
 		}
 
 		const defaultWriter = port.writable.getWriter()
@@ -227,21 +231,23 @@ export class ExcameraLabsI2CDriver {
 		}
 		finally {
 			// console.log('finally')
+			await defaultWriter.ready
+
 			await defaultReader.releaseLock()
 			await defaultWriter.releaseLock()
 		}
 	}
 
 	static async transmitStatusInfo(port) {
-		return ResponseBufferPasrser.parseTransmitStatusInfo(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_TRANSMIT_STATUS_INFO, undefined, COMMAND_REPLY_LENGTH_TRANSMIT_STATUS_INFO))
+		return ResponseBufferParser.parseTransmitStatusInfo(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_TRANSMIT_STATUS_INFO, undefined, COMMAND_REPLY_LENGTH_TRANSMIT_STATUS_INFO))
 	}
 
 	static async internalState(port) {
-		return ResponseBufferPasrser.parseInternalStatus(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_TRANSMIT_INTERNAL_STATE, undefined, COMMAND_REPLY_LENGTH_INTERNAL_STATE))
+		return ResponseBufferParser.parseInternalStatus(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_TRANSMIT_INTERNAL_STATE, undefined, COMMAND_REPLY_LENGTH_INTERNAL_STATE))
 	}
 
 	static async echoByte(port, b) {
-		return ResponseBufferPasrser.parseEchoByte(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_ECHO_BYTE, Uint8Array.from([ b ]), COMMAND_REPLY_LENGTH_SINGLE_BYTE))
+		return ResponseBufferParser.parseEchoByte(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_ECHO_BYTE, Uint8Array.from([ b ]), COMMAND_REPLY_LENGTH_SINGLE_BYTE))
 	}
 
 	static async setSpeed(port, speed) {
@@ -252,7 +258,7 @@ export class ExcameraLabsI2CDriver {
 
 	static async start(port, dev, readMode) {
 		const b = (dev << 1) | (readMode ? 1 : 0)
-		return ResponseBufferPasrser.parseStart(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_START, Uint8Array.from([ b ]), COMMAND_REPLY_LENGTH_SINGLE_BYTE))
+		return ResponseBufferParser.parseStart(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_START, Uint8Array.from([ b ]), COMMAND_REPLY_LENGTH_SINGLE_BYTE))
 	}
 
 	static async readNACKFinal(port, count) {
@@ -280,7 +286,7 @@ export class ExcameraLabsI2CDriver {
 
 		const command = COMMAND_MASK_WRITE | countMinusOne
 
-		return ResponseBufferPasrser.parseStart(await ExcameraLabsI2CDriver.sendRecvCommand(port, command, bufferSource, COMMAND_REPLY_LENGTH_SINGLE_BYTE))
+		return ResponseBufferParser.parseStart(await ExcameraLabsI2CDriver.sendRecvCommand(port, command, bufferSource, COMMAND_REPLY_LENGTH_SINGLE_BYTE))
 	}
 
 	static async readACKAll(port, count) {
@@ -292,16 +298,16 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	static async resetBus(port) {
-		return ResponseBufferPasrser.parseResetBus(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_RESET_BUS, undefined, COMMAND_REPLY_LENGTH_SINGLE_BYTE))
+		return ResponseBufferParser.parseResetBus(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_RESET_BUS, undefined, COMMAND_REPLY_LENGTH_SINGLE_BYTE))
 	}
 
 	static async readRegister(port, dev, addr, count) {
 		const data = Uint8Array.from([ dev, addr, count ])
-		return ResponseBufferPasrser.parseRegister(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_READ_REGISTER, data, count))
+		return ResponseBufferParser.parseRegister(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_READ_REGISTER, data, count))
 	}
 
 	static async scan(port) {
-		return ResponseBufferPasrser.parseScan(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_SCAN, undefined, COMMAND_REPLY_LENGTH_SCAN))
+		return ResponseBufferParser.parseScan(await ExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_SCAN, undefined, COMMAND_REPLY_LENGTH_SCAN))
 	}
 
 	static async enterMonitorMode(port) {

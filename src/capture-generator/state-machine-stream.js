@@ -37,7 +37,7 @@ async function takeActions(event, info, options) {
 
 	if(setAddress) {
 		options.address = event.value >> 1
-		options.mode = event.value & 0b1 === 1 ? 'read' : 'write'
+		options.mode = (event.value & 0b1) === 1 ? 'read' : 'write'
 	}
 
 	const source = options.bytesAccumulator ?? []

@@ -25,7 +25,8 @@ export const i2cStateMachine = {
 	[STATES.WARM_IDLE]: {
 		'idle': { target: STATES.WARM_IDLE },
 		'data': { target: STATES.ADDRESSED, setAddress: true },
-		'stop': { target: STATES.STOPPED, closeTransaction: true }
+		'stop': { target: STATES.STOPPED, closeTransaction: true },
+		'start': { target: STATES.ADDRESSING, openTransaction: true },
 	},
 	[STATES.STOPPED]: {
 		'idle': { target: STATES.WARM_IDLE },
@@ -39,13 +40,14 @@ export const i2cStateMachine = {
 		'stop': { target: STATES.STOPPED, closeTransaction: true  }
 	},
 	[STATES.ADDRESSED]: {
-		'ack': { target: STATES.ADDRESSED_ACKED },
-		'nack': { target: STATES.WARM_IDLE } // no response
+		'ack': { target: STATES.ADDRESSED_ACKED, online: true },
+		'nack': { target: STATES.WARM_IDLE, online: false } // no response
 	},
 	[STATES.ADDRESSED_ACKED]: {
 		'data': { target: STATES.TRANSMITION, bufferBytes: true },
+		'stop': { target: STATES.STOPPED, closeTransaction: true },
 
-		'stop': { target: STATES.STOPPED, closeTransaction: true }
+		'idle': { target: STATES.IDLE, closeTransaction: true  } // ?? error
 	},
 	[STATES.TRANSMITION]: {
 		'ack': { target: STATES.TRANSMITION_ACKED, flushBytes: true },
@@ -53,10 +55,13 @@ export const i2cStateMachine = {
 	},
 	[STATES.TRANSMITION_ACKED]: {
 		'stop': { target: STATES.STOPPED, closeTransaction: true },
-		'data': { target: STATES.TRANSMITION, bufferBytes: true }
+		'data': { target: STATES.TRANSMITION, bufferBytes: true },
+		'start': { target: STATES.ADDRESSING, openTransaction: true },
+		'idle': { target: STATES.IDLE, closeTransaction: true } //
 	},
 	[STATES.TRANSMITION_NACK_END]: {
 		'stop': { target: STATES.STOPPED, clearAddress: true, closeTransaction: true }
+		// start
 	},
 
 
