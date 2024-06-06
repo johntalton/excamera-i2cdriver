@@ -1,3 +1,6 @@
+
+export const INITIAL_CRC = 0xffff
+
 const LOOKUP_TABLE = [
 	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
 	0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -33,11 +36,19 @@ const LOOKUP_TABLE = [
 	0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 ]
 
-export function crcUpdate(startCRC = 0xffff, bufferSource) {
-	// todo ... validate buffersource
+export function crcUpdate(startCRC = INITIAL_CRC, buffer, count) {
 
-	return [ ...bufferSource ].reduce((crc, value) => {
-		const idx = ((crc >> 8) ^ value) & 0xff
+	const u8 = ArrayBuffer.isView(buffer) ?
+		new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+		new Uint8Array(buffer)
+
+		// console.log('up', [...u8])
+
+	if(u8.byteLength !== count) { throw new Error('count miss-match') }
+
+	return [ ...u8 ].reduce((crc, value) => {
+		const b = value & 0xff
+		const idx = ((crc >> 8) ^ b) & 0xff
 		return (LOOKUP_TABLE[idx] ^ (crc << 8)) & 0xffff
 	}, startCRC)
 }

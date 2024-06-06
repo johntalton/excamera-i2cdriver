@@ -1,15 +1,12 @@
 {
   "name": "@johntalton/excamera-i2cdriver",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "exports": {
     ".": "./src/i2c-driver.js",
-    "./capture": "./src/capture-generator/index.js",
-    "./package.json": "./package.json"
+    "./capture": "./src/capture-generator/index.js"
   },
-  "files": [ "src/**/*.js"],
-  "scripts": {
-  },
-  "dependencies": {
-  }
+  "files": [
+    "src/**/*.js"
+  ]
 }
