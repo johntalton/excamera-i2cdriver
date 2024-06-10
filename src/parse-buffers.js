@@ -1,22 +1,5 @@
-const PULLUP_0_0_K = 0b000
-const PULLUP_2_2_K = 0b001
-const PULLUP_4_3_K = 0b010
-const PULLUP_1_5_K_ALT = 0b011
-const PULLUP_4_7_K = 0b100
-const PULLUP_1_5_K = 0b101
-const PULLUP_2_2_K_ALT = 0b110
-const PULLUP_1_1_K = 0b111
+import { PULLUP_LOOKUP } from './defs.js'
 
-const PULLUP_LOOKUP = {
-	[PULLUP_0_0_K]: 'Zero',
-	[PULLUP_2_2_K]: '2.2K',
-	[PULLUP_4_3_K]: '4.3K',
-	[PULLUP_1_5_K_ALT]: '1.5K (alt)',
-	[PULLUP_4_7_K]: '4.7K',
-	[PULLUP_1_5_K]: '1.5K',
-	[PULLUP_2_2_K_ALT]: '2.2K (alt)',
-	[PULLUP_1_1_K]: '1.1K'
-}
 
 export function* range(start, end) {
 	yield start
@@ -24,8 +7,8 @@ export function* range(start, end) {
 	yield *range(start + 1, end)
 }
 
-function assertByteLength(buffer, length) {
-	if(buffer.byteLength !== length) { throw new Error('invalid byte length') }
+function assertAtLeastByteLength(buffer, length) {
+	if(buffer.byteLength < length) { throw new Error('invalid byte length - short') }
 }
 
 function assertNonZeroByteLength(buffer) {
@@ -50,8 +33,12 @@ export class ResponseBufferParser {
 		}
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
-	static parseTransmitStatusInfo(buffer) {
+		/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
+	 */
+	static parseTransmitStatusInfo({ buffer }) {
 		const decoder = new TextDecoder()
 		const str = decoder.decode(buffer)
 
@@ -86,8 +73,11 @@ export class ResponseBufferParser {
 		}
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
-	static parseEchoByte(buffer) {
+		/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 */
+	static parseEchoByte({ buffer }) {
 		assertNonZeroByteLength(buffer)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
@@ -97,9 +87,12 @@ export class ResponseBufferParser {
 		return u8[0]
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
-	static parseStart(buffer) {
-		assertByteLength(buffer, 1)
+		/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 */
+	static parseStart({ buffer }) {
+		assertAtLeastByteLength(buffer, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -122,9 +115,12 @@ export class ResponseBufferParser {
 		}
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
-	static parseRegister(buffer) {
-		assertByteLength(buffer, 1)
+		/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 */
+	static parseRegister({ buffer }) {
+		assertAtLeastByteLength(buffer, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -133,9 +129,12 @@ export class ResponseBufferParser {
 		return u8[0]
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
-	static parseResetBus(buffer) {
-		assertByteLength(buffer, 1)
+		/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 */
+	static parseResetBus({ buffer }) {
+		assertAtLeastByteLength(buffer, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -154,19 +153,26 @@ export class ResponseBufferParser {
 		}
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} buffer  */
-	static parseScan(buffer) {
-		assertByteLength(buffer, 112)
+		/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 */
+	static parseScan({ buffer }) {
+		assertAtLeastByteLength(buffer, 112)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Uint8Array(buffer)
 
 		const SCAN_START_ADDRESS = 0x08 // scan range 0x08 to 0x77
+		const SCAN_END_ADDRESS = 0x77
+		const count = SCAN_END_ADDRESS - SCAN_START_ADDRESS
 
-		return range(0, u8.byteLength - 1)
-			.map(index => {
-				const result =  ResponseBufferParser.parseStart(u8.subarray(index, index + 1))
+		console.log([ ...u8 ])
+
+		return range(0, count).map(index => {
+				const result =  ResponseBufferParser.parseStart({ buffer: u8.subarray(index, index + 1) })
+				console.log(index, result)
 				return {
 					...result,
 					dev: SCAN_START_ADDRESS + index
@@ -174,7 +180,11 @@ export class ResponseBufferParser {
 			})
 	}
 
-	static parseInternalStatus(buffer) {
+	/**
+	 * @param {Object} readResult
+	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 */
+	static parseInternalStatus({ buffer }) {
 
 		const decoder = new TextDecoder()
 		const str = decoder.decode(buffer)
