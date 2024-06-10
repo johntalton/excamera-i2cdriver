@@ -1,6 +1,5 @@
 import { PULLUP_LOOKUP } from './defs.js'
 
-
 export function* range(start, end) {
 	yield start
 	if(start === end) { return }
@@ -15,6 +14,9 @@ function assertNonZeroByteLength(buffer) {
 	if(buffer.byteLength <= 0) { throw new Error('zero length buffer') }
 }
 
+function assertBytesRead(bytesRead, target) {
+	if(bytesRead !== target) { throw new Error('invalid byte length') }
+}
 
 export class ResponseBufferParser {
 	/** @param {number} value  */
@@ -38,7 +40,7 @@ export class ResponseBufferParser {
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
-	static parseTransmitStatusInfo({ buffer }) {
+	static parseTransmitStatusInfo({ bytesRead, buffer }) {
 		const decoder = new TextDecoder()
 		const str = decoder.decode(buffer)
 
@@ -76,9 +78,11 @@ export class ResponseBufferParser {
 		/**
 	 * @param {Object} readResult
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
 	 */
-	static parseEchoByte({ buffer }) {
+	static parseEchoByte({ bytesRead, buffer }) {
 		assertNonZeroByteLength(buffer)
+		assertBytesRead(bytesRead, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -90,9 +94,11 @@ export class ResponseBufferParser {
 		/**
 	 * @param {Object} readResult
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
 	 */
-	static parseStart({ buffer }) {
+	static parseStart({ bytesRead, buffer }) {
 		assertAtLeastByteLength(buffer, 1)
+		assertBytesRead(bytesRead, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -118,9 +124,11 @@ export class ResponseBufferParser {
 		/**
 	 * @param {Object} readResult
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
 	 */
-	static parseRegister({ buffer }) {
+	static parseRegister({ bytesRead, buffer }) {
 		assertAtLeastByteLength(buffer, 1)
+		assertBytesRead(bytesRead, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -132,9 +140,11 @@ export class ResponseBufferParser {
 		/**
 	 * @param {Object} readResult
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
 	 */
-	static parseResetBus({ buffer }) {
+	static parseResetBus({ bytesRead, buffer }) {
 		assertAtLeastByteLength(buffer, 1)
+		assertBytesRead(bytesRead, 1)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -156,9 +166,11 @@ export class ResponseBufferParser {
 		/**
 	 * @param {Object} readResult
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
 	 */
-	static parseScan({ buffer }) {
+	static parseScan({ bytesRead, buffer }) {
 		assertAtLeastByteLength(buffer, 112)
+		assertBytesRead(bytesRead, 112)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
@@ -168,11 +180,8 @@ export class ResponseBufferParser {
 		const SCAN_END_ADDRESS = 0x77
 		const count = SCAN_END_ADDRESS - SCAN_START_ADDRESS
 
-		console.log([ ...u8 ])
-
 		return range(0, count).map(index => {
-				const result =  ResponseBufferParser.parseStart({ buffer: u8.subarray(index, index + 1) })
-				console.log(index, result)
+				const result =  ResponseBufferParser.parseStart({ bytesRead: 1, buffer: u8.subarray(index, index + 1) })
 				return {
 					...result,
 					dev: SCAN_START_ADDRESS + index
@@ -183,8 +192,9 @@ export class ResponseBufferParser {
 	/**
 	 * @param {Object} readResult
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
 	 */
-	static parseInternalStatus({ buffer }) {
+	static parseInternalStatus({ bytesRead, buffer }) {
 
 		const decoder = new TextDecoder()
 		const str = decoder.decode(buffer)
