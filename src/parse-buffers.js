@@ -126,22 +126,6 @@ export class ResponseBufferParser {
 	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
-	static parseRegister({ bytesRead, buffer }) {
-		assertAtLeastByteLength(buffer, 1)
-		assertBytesRead(bytesRead, 1)
-
-		const u8 = ArrayBuffer.isView(buffer) ?
-			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
-			new Uint8Array(buffer)
-
-		return u8[0]
-	}
-
-		/**
-	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
-	 */
 	static parseResetBus({ bytesRead, buffer }) {
 		assertAtLeastByteLength(buffer, 1)
 		assertBytesRead(bytesRead, 1)

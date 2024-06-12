@@ -25,22 +25,27 @@ export class ExcameraLabsI2CDriverI2C {
 
 	async stop() { return ExcameraLabsI2CDriver.stop(this.#port) }
 
+	/** @param {ArrayBufferLike|ArrayBufferView} readBuffer  */
 	async readACKAll(count, readBuffer) {
 		return ExcameraLabsI2CDriver.readACKAll(this.#port, count, readBuffer)
-			// .then(buffer => {
+			// .then(result => {
+			//	const { buffer, bytesRead } = result
 			// 	this.#crc = crcUpdate(this.#crc, buffer, count)
-			// 	return buffer
+			// 	return result
 			// })
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} readBuffer  */
 	async readNACKFinal(count, readBuffer) {
 		return ExcameraLabsI2CDriver.readNACKFinal(this.#port, count, readBuffer)
-			// .then(buffer => {
+			// .then(result => {
+			//	const { buffer, bytesRead } = result
 			// 	this.#crc = crcUpdate(this.#crc, buffer, count)
-			// 	return buffer
+			// 	return result
 			// })
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} bufferSource  */
 	async write(count, bufferSource) {
 		return ExcameraLabsI2CDriver.write(this.#port, count, bufferSource)
 			// .then(state => {
@@ -49,12 +54,13 @@ export class ExcameraLabsI2CDriverI2C {
 			// })
 	}
 
+	/** @param {ArrayBufferLike|ArrayBufferView} readBuffer  */
 	async readRegister(dev, addr, count, readBuffer) {
 		return ExcameraLabsI2CDriver.readRegister(this.#port, dev, addr, count, readBuffer)
-			// .then(value => {
-			// 	const buffer = Uint8Array.from([ value ])
+			// .then(result => {
+			//	const { buffer, bytesRead } = result
 			// 	this.#crc = crcUpdate(this.#crc, buffer, count)
-			// 	return value
+			// 	return result
 			// })
 	}
 

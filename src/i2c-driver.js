@@ -92,12 +92,9 @@ export class ExcameraLabsI2CDriver {
 		return ResponseBufferParser.parseResetBus(await CoreExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_RESET_BUS, undefined, COMMAND_REPLY_LENGTH_SINGLE_BYTE, readBuffer))
 	}
 
-	static async readRegister(port, dev, addr, count, _readBuffer) {
-		if(count !== 1) { throw new Error('Arbitrary restriction for now') }
-
+	static async readRegister(port, dev, addr, count, readBuffer) {
 		const data = Uint8Array.from([ dev, addr, count ])
-		const readBuffer = data.buffer // reuse (see arbitrary restriction)
-		return ResponseBufferParser.parseRegister(await CoreExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_READ_REGISTER, data, count, readBuffer))
+		return CoreExcameraLabsI2CDriver.sendRecvCommand(port, COMMAND_READ_REGISTER, data, count, readBuffer)
 	}
 
 	static async scan(port) {
