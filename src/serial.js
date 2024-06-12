@@ -5,8 +5,8 @@ export class CoreExcameraLabsI2CDriver {
 
 	static async #streamChunkReadBYOB(defaultReader, recvLength, readBuffer) {
 		const timer = setTimeout(() => {
-			console.log('read timeout')
-			defaultReader.cancel() // todo async?
+			console.warn('read timeout')
+			defaultReader.cancel()
 		}, CoreExcameraLabsI2CDriver.READ_TIMEOUT_MS)
 
 		let offset = ArrayBuffer.isView(readBuffer) ? readBuffer.byteOffset : 0
@@ -52,7 +52,7 @@ export class CoreExcameraLabsI2CDriver {
 
 			const commandBuffer = Uint8Array.from([ command ])
 
-			if(false) {
+			if(true) {
 				const parts = sendBuffer !== undefined ? [ commandBuffer, sendBuffer ] : [ commandBuffer ]
 				const blob = new Blob(parts)
 				const buffer = await blob.arrayBuffer()
