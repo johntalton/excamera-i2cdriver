@@ -1,4 +1,4 @@
-name: Publish (NPM / GitHub)
+name: Publish (NPM)
 on:
   release:
     types: [created]

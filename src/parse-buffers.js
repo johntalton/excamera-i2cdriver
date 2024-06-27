@@ -11,7 +11,7 @@ function assertAtLeastByteLength(buffer, length) {
 }
 
 function assertNonZeroByteLength(buffer) {
-	if(buffer.byteLength <= 0) { throw new Error('zero length buffer') }
+	if(buffer.byteLength <= 0) { throw new Error('zero (or less 🤯) length buffer') }
 }
 
 function assertBytesRead(bytesRead, target) {
@@ -19,6 +19,19 @@ function assertBytesRead(bytesRead, target) {
 }
 
 export class ResponseBufferParser {
+	static _parseByte({ buffer, bytesRead }) {
+		assertNonZeroByteLength(buffer)
+		assertAtLeastByteLength(buffer, 1)
+		assertBytesRead(bytesRead, 1)
+
+		const u8 = ArrayBuffer.isView(buffer) ?
+			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
+			new Uint8Array(buffer)
+
+		return u8[0]
+	}
+
+
 	/** @param {number} value  */
 	static _parsePullup(value) {
 
@@ -81,14 +94,7 @@ export class ResponseBufferParser {
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseEchoByte({ bytesRead, buffer }) {
-		assertNonZeroByteLength(buffer)
-		assertBytesRead(bytesRead, 1)
-
-		const u8 = ArrayBuffer.isView(buffer) ?
-			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
-			new Uint8Array(buffer)
-
-		return u8[0]
+		return ResponseBufferParser._parseByte({ bytesRead, buffer })
 	}
 
 		/**
@@ -97,19 +103,12 @@ export class ResponseBufferParser {
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseStart({ bytesRead, buffer }) {
-		assertAtLeastByteLength(buffer, 1)
-		assertBytesRead(bytesRead, 1)
-
-		const u8 = ArrayBuffer.isView(buffer) ?
-			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
-			new Uint8Array(buffer)
+		const b = ResponseBufferParser._parseByte({ bytesRead, buffer })
 
 		const RESERVED_5_MASK = 0b00110
 		const ARBITRATION_MASK = 0b100
 		const TO_MASK = 0b010
 		const ACK_MASK = 0b001
-
-		const [ b ] = u8
 
 		const valid = ((b >> 3) & RESERVED_5_MASK) === RESERVED_5_MASK
 
@@ -127,14 +126,7 @@ export class ResponseBufferParser {
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseResetBus({ bytesRead, buffer }) {
-		assertAtLeastByteLength(buffer, 1)
-		assertBytesRead(bytesRead, 1)
-
-		const u8 = ArrayBuffer.isView(buffer) ?
-			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
-			new Uint8Array(buffer)
-
-		const [ b ] = u8
+		const b = ResponseBufferParser._parseByte({ bytesRead, buffer })
 
 		const SDA_MASK = 0b10
 		const SCL_MASK = 0b01
@@ -179,7 +171,6 @@ export class ResponseBufferParser {
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseInternalStatus({ bytesRead, buffer }) {
-
 		const decoder = new TextDecoder()
 		const str = decoder.decode(buffer)
 
