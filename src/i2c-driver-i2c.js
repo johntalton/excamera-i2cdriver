@@ -66,5 +66,6 @@ export class ExcameraLabsI2CDriverI2C {
 
 	async resetBus() { return ExcameraLabsI2CDriver.resetBus(this.#port) }
 	async transmitStatusInfo() { return ExcameraLabsI2CDriver.transmitStatusInfo(this.#port) }
+	async scan() { return ExcameraLabsI2CDriver.scan(this.#port) }
 }
 
