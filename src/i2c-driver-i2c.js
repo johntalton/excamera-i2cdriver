@@ -25,7 +25,7 @@ export class ExcameraLabsI2CDriverI2C {
 
 	async stop() { return ExcameraLabsI2CDriver.stop(this.#port) }
 
-	/** @param {ArrayBufferLike|ArrayBufferView} readBuffer  */
+	/** @param {ArrayBuffer|ArrayBufferView} readBuffer  */
 	async readACKAll(count, readBuffer) {
 		return ExcameraLabsI2CDriver.readACKAll(this.#port, count, readBuffer)
 			// .then(result => {
@@ -35,7 +35,7 @@ export class ExcameraLabsI2CDriverI2C {
 			// })
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} readBuffer  */
+	/** @param {ArrayBuffer|ArrayBufferView} readBuffer  */
 	async readNACKFinal(count, readBuffer) {
 		return ExcameraLabsI2CDriver.readNACKFinal(this.#port, count, readBuffer)
 			// .then(result => {
@@ -45,7 +45,7 @@ export class ExcameraLabsI2CDriverI2C {
 			// })
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} bufferSource  */
+	/** @param {ArrayBuffer|ArrayBufferView} bufferSource  */
 	async write(count, bufferSource) {
 		return ExcameraLabsI2CDriver.write(this.#port, count, bufferSource)
 			// .then(state => {
@@ -54,7 +54,7 @@ export class ExcameraLabsI2CDriverI2C {
 			// })
 	}
 
-	/** @param {ArrayBufferLike|ArrayBufferView} readBuffer  */
+	/** @param {ArrayBuffer|ArrayBufferView} readBuffer  */
 	async readRegister(dev, addr, count, readBuffer) {
 		return ExcameraLabsI2CDriver.readRegister(this.#port, dev, addr, count, readBuffer)
 			// .then(result => {

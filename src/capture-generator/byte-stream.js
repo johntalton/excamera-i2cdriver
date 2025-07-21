@@ -1,8 +1,4 @@
-function* range(start, end) {
-	yield start
-	if (start === end) return
-	yield* range(start + 1, end)
-}
+import { range } from '../range.js'
 
 export async function* byteStream(bufferSourceStream) {
 	for await (const bufferSource of bufferSourceStream) {

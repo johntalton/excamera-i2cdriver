@@ -1,10 +1,9 @@
-import { PULLUP_LOOKUP } from './defs.js'
-
-export function* range(start, end) {
-	yield start
-	if(start === end) { return }
-	yield *range(start + 1, end)
-}
+import {
+	PULLUP_LOOKUP,
+	COMMAND_REPLY_LENGTH_SCAN,
+	COMMAND_REPLY_LENGTH_SINGLE_BYTE
+} from './defs.js'
+import { range } from './range.js'
 
 function assertAtLeastByteLength(buffer, length) {
 	if(buffer.byteLength < length) { throw new Error('invalid byte length - short') }
@@ -21,14 +20,26 @@ function assertBytesRead(bytesRead, target) {
 export class ResponseBufferParser {
 	static _parseByte({ buffer, bytesRead }) {
 		assertNonZeroByteLength(buffer)
-		assertAtLeastByteLength(buffer, 1)
-		assertBytesRead(bytesRead, 1)
+		assertAtLeastByteLength(buffer, COMMAND_REPLY_LENGTH_SINGLE_BYTE)
+		assertBytesRead(bytesRead, COMMAND_REPLY_LENGTH_SINGLE_BYTE)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Uint8Array(buffer)
 
 		return u8[0]
+	}
+
+	/**
+	 * @param {Object} readResult
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
+	 * @param {number} readResult.bytesRead
+	 * @returns {Array<string>}
+	 */
+	static _parseString({ buffer, bytesRead }) {
+		const decoder = new TextDecoder()
+		const str = decoder.decode(buffer)
+		return str.slice(1, -1).split(' ')
 	}
 
 
@@ -48,15 +59,12 @@ export class ResponseBufferParser {
 		}
 	}
 
-		/**
+	/**
 	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseTransmitStatusInfo({ bytesRead, buffer }) {
-		const decoder = new TextDecoder()
-		const str = decoder.decode(buffer)
-
 		const [
 			identifier,
 			serial,
@@ -70,7 +78,7 @@ export class ResponseBufferParser {
 			speed,
 			pullups,
 			crc
-		] = str.slice(1, -1).split(' ')
+		] = ResponseBufferParser._parseString({ buffer, bytesRead })
 
 		return {
 			identifier,
@@ -90,7 +98,7 @@ export class ResponseBufferParser {
 
 		/**
 	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseEchoByte({ bytesRead, buffer }) {
@@ -99,7 +107,7 @@ export class ResponseBufferParser {
 
 		/**
 	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseStart({ bytesRead, buffer }) {
@@ -122,7 +130,7 @@ export class ResponseBufferParser {
 
 		/**
 	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseResetBus({ bytesRead, buffer }) {
@@ -141,18 +149,18 @@ export class ResponseBufferParser {
 
 		/**
 	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseScan({ bytesRead, buffer }) {
-		assertAtLeastByteLength(buffer, 112)
-		assertBytesRead(bytesRead, 112)
+		assertAtLeastByteLength(buffer, COMMAND_REPLY_LENGTH_SCAN)
+		assertBytesRead(bytesRead, COMMAND_REPLY_LENGTH_SCAN)
 
 		const u8 = ArrayBuffer.isView(buffer) ?
 			new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) :
 			new Uint8Array(buffer)
 
-		const SCAN_START_ADDRESS = 0x08 // scan range 0x08 to 0x77
+		const SCAN_START_ADDRESS = 0x08 // scan from 0x08 to 0x77
 		const SCAN_END_ADDRESS = 0x77
 		const count = SCAN_END_ADDRESS - SCAN_START_ADDRESS
 
@@ -167,12 +175,11 @@ export class ResponseBufferParser {
 
 	/**
 	 * @param {Object} readResult
-	 * @param {ArrayBufferLike|ArrayBufferView} readResult.buffer
+	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
 	 * @param {number} readResult.bytesRead
 	 */
 	static parseInternalStatus({ bytesRead, buffer }) {
-		const decoder = new TextDecoder()
-		const str = decoder.decode(buffer)
+		const parts = ResponseBufferParser._parseString({ buffer, bytesRead })
 
 		// id ds sp SMB0CF SMB0CN T2 T3 IE EIE1 P0 P0MDIN P0MDOUT P1 P1MDIN P1MDOUT P2 P2MDOUT"
 
@@ -180,7 +187,7 @@ export class ResponseBufferParser {
 			id, ds, sp, smb0cf, smb0cn, t2, t3, ie, eie1,
 			p0, p0mdin, p0mdout, p1, p1mdin, p1mdout, p2, p2mdout,
 			convs
-		] = str.slice(1, -1).split(' ').map(hex => parseInt(hex, 16))
+		] = parts.map(hex => parseInt(hex, 16))
 
 		return {
 			id, ds, sp, smb0cf, smb0cn, t2, t3, ie, eie1,

@@ -1,8 +1,8 @@
-const mattched = value => ({ when: () => mattched(value), value: () => value })
+const matched = value => ({ when: () => matched(value), value: () => value })
 
 const match = eventByte => ({
 	when: (matchByte, value) =>
-		matchByte === eventByte ? mattched(value) : match(eventByte),
+		matchByte === eventByte ? matched(value) : match(eventByte),
 	value: () => { throw new Error('unmatched byte: ' + eventByte) }
 })
 
