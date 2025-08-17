@@ -5,6 +5,28 @@ import {
 } from './defs.js'
 import { range } from './range.js'
 
+/** @import { ReadResult } from './serial.js' */
+
+/**
+ * @typedef {Object} Start
+ * @property {boolean} valid
+ * @property {number|0|1} arb
+ * @property {number|0|1} to
+ * @property {number|0|1} ack
+ */
+
+/** @typedef {Start & { dev: number}} StartWithDevice */
+
+/**
+ * @typedef {Object} TransmitStatusInfo
+ */
+
+/**
+ * @typedef {Object} BusStatus
+ * @property {number} scl
+ * @property {number} sda
+ */
+
 function assertAtLeastByteLength(buffer, length) {
 	if(buffer.byteLength < length) { throw new Error('invalid byte length - short') }
 }
@@ -18,6 +40,10 @@ function assertBytesRead(bytesRead, target) {
 }
 
 export class ResponseBufferParser {
+	/**
+	 * @param {ReadResult} readResult
+	 * @returns {number}
+	 */
 	static _parseByte({ buffer, bytesRead }) {
 		assertNonZeroByteLength(buffer)
 		assertAtLeastByteLength(buffer, COMMAND_REPLY_LENGTH_SINGLE_BYTE)
@@ -31,9 +57,7 @@ export class ResponseBufferParser {
 	}
 
 	/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	 * @param {ReadResult} readResult
 	 * @returns {Array<string>}
 	 */
 	static _parseString({ buffer, bytesRead }) {
@@ -43,7 +67,9 @@ export class ResponseBufferParser {
 	}
 
 
-	/** @param {number} value  */
+	/**
+	 * @param {number} value
+	 */
 	static _parsePullup(value) {
 
 		const PULL_UP_MASK = 0b111
@@ -60,9 +86,8 @@ export class ResponseBufferParser {
 	}
 
 	/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	 * @param {ReadResult} readResult
+	 * @returns {TransmitStatusInfo}
 	 */
 	static parseTransmitStatusInfo({ bytesRead, buffer }) {
 		const [
@@ -97,18 +122,16 @@ export class ResponseBufferParser {
 	}
 
 		/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	 * @param {ReadResult} readResult
+	 * @returns {number]}
 	 */
 	static parseEchoByte({ bytesRead, buffer }) {
 		return ResponseBufferParser._parseByte({ bytesRead, buffer })
 	}
 
-		/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	/**
+	 * @param {ReadResult} readResult
+	 * @returns {Start}
 	 */
 	static parseStart({ bytesRead, buffer }) {
 		const b = ResponseBufferParser._parseByte({ bytesRead, buffer })
@@ -128,10 +151,9 @@ export class ResponseBufferParser {
 		}
 	}
 
-		/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	/**
+	 * @param {ReadResult} readResult
+	 * @returns {BusStatus}
 	 */
 	static parseResetBus({ bytesRead, buffer }) {
 		const b = ResponseBufferParser._parseByte({ bytesRead, buffer })
@@ -147,10 +169,9 @@ export class ResponseBufferParser {
 		}
 	}
 
-		/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	/**
+	 * @param {ReadResult} readResult
+	 * @returns {StartWithDevice[]}
 	 */
 	static parseScan({ bytesRead, buffer }) {
 		assertAtLeastByteLength(buffer, COMMAND_REPLY_LENGTH_SCAN)
@@ -165,18 +186,17 @@ export class ResponseBufferParser {
 		const count = SCAN_END_ADDRESS - SCAN_START_ADDRESS
 
 		return range(0, count).map(index => {
-				const result =  ResponseBufferParser.parseStart({ bytesRead: 1, buffer: u8.subarray(index, index + 1) })
-				return {
-					...result,
-					dev: SCAN_START_ADDRESS + index
-				}
-			})
+			const result =  ResponseBufferParser.parseStart({ bytesRead: 1, buffer: u8.subarray(index, index + 1) })
+			return {
+				...result,
+				dev: SCAN_START_ADDRESS + index
+			}
+		})
 	}
 
 	/**
-	 * @param {Object} readResult
-	 * @param {ArrayBuffer|ArrayBufferView} readResult.buffer
-	 * @param {number} readResult.bytesRead
+	 * @param {ReadResult} readResult
+	 * @returns {any}
 	 */
 	static parseInternalStatus({ bytesRead, buffer }) {
 		const parts = ResponseBufferParser._parseString({ buffer, bytesRead })

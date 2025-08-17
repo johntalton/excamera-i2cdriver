@@ -1,13 +1,33 @@
-import { COMMAND_REPLY_LENGTH_NONE } from './defs.js'
+/**
+ * @typedef {Object} CommandOptions
+ * @property {AbortSignal} [signal]
+ * @property {number} [timeoutMs]
+ */
 
-export const EMPTY_RESULT = {
-	bytesRead: 0,
-	buffer: undefined // new ArrayBuffer(0)
-}
+/**
+ * @typedef {ArrayBufferLike|ArrayBufferView} TargetReadBuffer
+ * @typedef {ArrayBufferLike|ArrayBufferView} SendBuffer
+ */
+
+/**
+ * @typedef {Object} ReadResult
+ * @property {number} bytesRead,
+ * @property {TargetReadBuffer} buffer
+ */
+
+
+/** @typedef {Object} SerialPort */
 
 export class CoreExcameraLabsI2CDriver {
 	static defaultTimeoutMs = 1000 * 0.25
 
+	/**
+	 * @param {SerialPort} port
+	 * @param {TargetReadBuffer} readBuffer
+	 * @param {number} recvLength
+	 * @param {CommandOptions} [options]
+	 * @returns {Promise<ReadResult>}
+	 */
 	static async #streamChunkReadBYOB(
 		port,
 		recvLength,
@@ -21,6 +41,7 @@ export class CoreExcameraLabsI2CDriver {
 		if (port.readable.locked) { throw new Error('locked reader') }
 		if (signal?.aborted ?? false) { throw new Error('read aborted') }
 
+		/** @type {ReadableStreamBYOBReader} */
 		const reader = port.readable.getReader({ mode: 'byob' })
 
 		const flags = {
@@ -75,61 +96,68 @@ export class CoreExcameraLabsI2CDriver {
 		throw new Error('exit')
 	}
 
+	static async #sendCommand(defaultWriter, command, sendBuffer, options) {
+		const { signal } = options ?? {}
+
+		await defaultWriter.ready
+
+		if(signal !== undefined && signal.aborted) {
+			console.warn('sendRecvCommand aborted before write')
+			// return EMPTY_RESULT
+			throw new Error('aborted via signal before write')
+		}
+
+		const commandBuffer = Uint8Array.from([ command ])
+
+		if(true) {
+			// this approach join the buffers resulting in
+			// a single call to the writer.
+			const parts = sendBuffer !== undefined ? [ commandBuffer, sendBuffer ] : [ commandBuffer ]
+			const blob = new Blob(parts)
+			const buffer = await blob.arrayBuffer()
+			await defaultWriter.write(buffer)
+		}
+		else {
+			// this approach uses disjoint writes to send the command
+			// and potential data buffer.
+			await defaultWriter.write(commandBuffer)
+			if(sendBuffer !== undefined) {
+				await defaultWriter.write(sendBuffer)
+			}
+		}
+
+		if(signal !== undefined && signal.aborted) {
+			console.warn('sendRecvCommand aborted after write')
+			// return EMPTY_RESULT
+			throw new Error('aborted via signal after write')
+		}
+	}
+
 	/**
 	 * @param {SerialPort} port
-	 * @param {ArrayBuffer|ArrayBufferView|undefined} readBuffer
-	 * @param {ArrayBuffer|ArrayBufferView|undefined} sendBuffer
-	 * @returns {Promise<{ buffer: ArrayBuffer|ArrayBufferView|undefined, bytesRead: number }>}
+	 * @param {number} command
+	 * @param {TargetReadBuffer} readBuffer
+	 * @param {number} recvLength
+	 * @param {SendBuffer|undefined} sendBuffer
+	 * @param {CommandOptions} [options]
+	 * @returns {Promise<ReadResult>}
 	*/
 	static async sendRecvCommand(
 		port,
 		command,
 		sendBuffer = undefined,
 		recvLength = 0,
-		readBuffer = undefined,
-		options = {}) {
+		readBuffer,
+		options) {
 
-		const { signal } = options
+		if (recvLength === undefined || recvLength <= 0 || readBuffer === undefined) {
+			throw new Error('recvLength or buffer unset')
+		}
 
 		const defaultWriter = port.writable.getWriter()
 
 		try {
-			await defaultWriter.ready
-
-			if(signal !== undefined && signal.aborted) {
-				console.warn('sendRecvCommand aborted before write')
-				// return EMPTY_RESULT
-				throw new Error('aborted via signal before write')
-			}
-
-			const commandBuffer = Uint8Array.from([ command ])
-
-			if(true) {
-				// this approach join the buffers resulting in
-				// a single call to the writer.
-				const parts = sendBuffer !== undefined ? [ commandBuffer, sendBuffer ] : [ commandBuffer ]
-				const blob = new Blob(parts)
-				const buffer = await blob.arrayBuffer()
-				await defaultWriter.write(buffer)
-			}
-			else {
-				// this approach uses disjoint writes to send the command
-				// and potential data buffer.
-				await defaultWriter.write(commandBuffer)
-				if(sendBuffer !== undefined) {
-					await defaultWriter.write(sendBuffer)
-				}
-			}
-
-			if (recvLength === undefined || recvLength <= 0) {
-				return EMPTY_RESULT
-			}
-
-			if(signal !== undefined && signal.aborted) {
-				console.warn('sendRecvCommand aborted after write')
-				// return EMPTY_RESULT
-				throw new Error('aborted via signal after write')
-			}
+			await CoreExcameraLabsI2CDriver.#sendCommand(defaultWriter, command, sendBuffer, options)
 
 			// return await here as otherwise the finally block will release the lock before the read
 			return await CoreExcameraLabsI2CDriver.#streamChunkReadBYOB(port, recvLength, readBuffer, options)
@@ -143,20 +171,54 @@ export class CoreExcameraLabsI2CDriver {
 		}
 	}
 
-	static async sendCommandNoReply(port, command, sendBuffer, options) {
-		return CoreExcameraLabsI2CDriver.sendRecvCommand(port, command, sendBuffer, COMMAND_REPLY_LENGTH_NONE, undefined, options)
-			.then(_ => {})
+	/**
+	 * @param {SerialPort} port
+	 * @param {number} command
+	 * @param {SendBuffer|undefined} sendBuffer
+	 * @param {CommandOptions} [options]
+	 * @returns {Promise<void>}
+	*/
+	static async sendCommandNoReply(
+		port,
+		command,
+		sendBuffer = undefined,
+		options) {
+
+		const defaultWriter = port.writable.getWriter()
+
+		try {
+			await CoreExcameraLabsI2CDriver.#sendCommand(defaultWriter, command, sendBuffer, options)
+		}
+		catch (e) {
+			throw e
+		}
+		finally {
+			await defaultWriter.ready
+			await defaultWriter.releaseLock()
+		}
 	}
 
+	/**
+	 * @param {SerialPort} port
+	 * @param {number} command
+	 * @param {CommandOptions} [options]
+	 */
 	static async sendCommandOnly(port, command, options) {
 		return CoreExcameraLabsI2CDriver.sendCommandNoReply(port, command, undefined, options)
 	}
 
+	/**
+	 * @param {SerialPort} port
+	 * @param {string} textCommand
+	 * @param {SendBuffer|undefined} sendBuffer
+	 * @param {number|undefined} recvLength
+	 * @param {CommandOptions} [options]
+	 */
 	static async sendRecvTextCommand(port, textCommand, sendBuffer, recvLength, options) {
 		const encoder = new TextEncoder()
 		const encoded = encoder.encode(textCommand)
 
-		const command = encoded[0]
+		const [ command ] = encoded
 		const readBuffer = new ArrayBuffer(recvLength)
 		return CoreExcameraLabsI2CDriver.sendRecvCommand(port, command, sendBuffer, recvLength, readBuffer, options)
 	}
