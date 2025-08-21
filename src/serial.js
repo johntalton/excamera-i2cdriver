@@ -19,7 +19,7 @@
 /** @typedef {Object} SerialPort */
 
 export class CoreExcameraLabsI2CDriver {
-	static defaultTimeoutMs = 1000 * 0.25
+	static defaultTimeoutMs = 500
 
 	/**
 	 * @param {SerialPort} port
@@ -32,10 +32,11 @@ export class CoreExcameraLabsI2CDriver {
 		port,
 		recvLength,
 		readBuffer,
-		{
-			signal = undefined,
-			timeoutMs = CoreExcameraLabsI2CDriver.defaultTimeoutMs
-		} = {}) {
+		options) {
+
+		const { signal, timeoutMs } = options ?? {}
+
+		// console.log('#streamChunkReadBYOB', recvLength, readBuffer)
 
 		if (port.readable === null) { throw new Error('null readable') }
 		if (port.readable.locked) { throw new Error('locked reader') }
@@ -52,14 +53,14 @@ export class CoreExcameraLabsI2CDriver {
 		signal?.addEventListener('abort', event => {
 			console.warn('read aborted')
 			flags.aborted = true
-			reader.cancel()
+			reader.cancel('Signal Abort')
 		})
 
 		const timer = setTimeout(() => {
 			console.warn('read timeout')
 			flags.timedout = true
-			reader.cancel()
-		}, timeoutMs)
+			reader.cancel('Timed Out')
+		}, timeoutMs ?? CoreExcameraLabsI2CDriver.defaultTimeoutMs)
 
 		let offset = ArrayBuffer.isView(readBuffer) ? readBuffer.byteOffset : 0
 		let buffer = ArrayBuffer.isView(readBuffer) ? readBuffer.buffer : readBuffer
@@ -87,7 +88,11 @@ export class CoreExcameraLabsI2CDriver {
 				buffer
 			}
 		}
-		catch(e) { throw e }
+		catch(e) {
+			// console.log(buffer, offset, recvLength, bytesRead)
+			reader.cancel('Exception')
+			throw e
+		}
 		finally {
 			clearTimeout(timer)
 			reader.releaseLock()
@@ -149,6 +154,10 @@ export class CoreExcameraLabsI2CDriver {
 		recvLength = 0,
 		readBuffer,
 		options) {
+
+		// console.log('sendRecvCommand', command, sendBuffer, recvLength, readBuffer, options)
+
+		if(readBuffer !== undefined && (recvLength > readBuffer.byteLength)) { throw new Error('readBuffer not large enough for requested data') }
 
 		if (recvLength === undefined || recvLength <= 0 || readBuffer === undefined) {
 			throw new Error('recvLength or buffer unset')
