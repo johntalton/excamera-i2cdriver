@@ -62,7 +62,8 @@ export class CoreExcameraLabsI2CDriver {
 			reader.cancel('Timed Out')
 		}, timeoutMs ?? CoreExcameraLabsI2CDriver.defaultTimeoutMs)
 
-		let offset = ArrayBuffer.isView(readBuffer) ? readBuffer.byteOffset : 0
+		const startOffset = ArrayBuffer.isView(readBuffer) ? readBuffer.byteOffset : 0
+		let offset = startOffset
 		let buffer = ArrayBuffer.isView(readBuffer) ? readBuffer.buffer : readBuffer
 		let bytesRead = 0
 
@@ -83,9 +84,11 @@ export class CoreExcameraLabsI2CDriver {
 				}
 			}
 
+			const returnBuffer = new Uint8Array(buffer, startOffset, bytesRead)
+
 			return {
 				bytesRead,
-				buffer
+				buffer: returnBuffer
 			}
 		}
 		catch(e) {
@@ -156,6 +159,9 @@ export class CoreExcameraLabsI2CDriver {
 		options) {
 
 		// console.log('sendRecvCommand', command, sendBuffer, recvLength, readBuffer, options)
+
+		// if(readBuffer !== undefined && ArrayBuffer.isView(readBuffer) && readBuffer.buffer.detached) { throw new Error('detached') }
+		// if(readBuffer !== undefined && !ArrayBuffer.isView(readBuffer) && readBuffer.detached) { throw new Error('detached') }
 
 		if(readBuffer !== undefined && (recvLength > readBuffer.byteLength)) { throw new Error('readBuffer not large enough for requested data') }
 
