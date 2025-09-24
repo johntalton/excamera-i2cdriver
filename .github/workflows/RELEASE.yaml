@@ -1,5 +1,6 @@
 name: Publish (NPM)
 permissions:
+  id-token: write
   contents: read
   pull-requests: write
 on:
@@ -13,11 +14,10 @@ jobs:
     # Publish to NPM
     - uses: actions/setup-node@v5
       with:
+        node-version: 24
         registry-url: 'https://registry.npmjs.org/'
     - run: npm install
     - run: npm run build --if-present
     - run: npm run format --if-present
     - run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
