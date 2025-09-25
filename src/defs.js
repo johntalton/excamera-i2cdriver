@@ -62,6 +62,7 @@ export const PULLUP_1_5_K = 0b101
 export const PULLUP_2_2_K_ALT = 0b110
 export const PULLUP_1_1_K = 0b111
 
+/** @type {Record<number, string>} */
 export const PULLUP_LOOKUP = {
 	[PULLUP_0_0_K]: 'Zero',
 	[PULLUP_2_2_K]: '2.2K',

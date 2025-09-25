@@ -15,14 +15,11 @@
  * @property {TargetReadBuffer} buffer
  */
 
-
-/** @typedef {Object} SerialPort */
-
 export class CoreExcameraLabsI2CDriver {
 	static defaultTimeoutMs = 500
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {TargetReadBuffer} readBuffer
 	 * @param {number} recvLength
 	 * @param {CommandOptions} [options]
@@ -104,6 +101,12 @@ export class CoreExcameraLabsI2CDriver {
 		throw new Error('exit')
 	}
 
+	/**
+	 * @param {WritableStreamDefaultWriter} defaultWriter
+	 * @param {number} command
+	 * @param {SendBuffer|undefined} sendBuffer
+	 * @param {CommandOptions} [options]
+	 */
 	static async #sendCommand(defaultWriter, command, sendBuffer, options) {
 		const { signal } = options ?? {}
 
@@ -142,7 +145,7 @@ export class CoreExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} command
 	 * @param {TargetReadBuffer} readBuffer
 	 * @param {number} recvLength
@@ -187,7 +190,7 @@ export class CoreExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} command
 	 * @param {SendBuffer|undefined} sendBuffer
 	 * @param {CommandOptions} [options]
@@ -214,7 +217,7 @@ export class CoreExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} command
 	 * @param {CommandOptions} [options]
 	 */
@@ -223,7 +226,7 @@ export class CoreExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {string} textCommand
 	 * @param {SendBuffer|undefined} sendBuffer
 	 * @param {number|undefined} recvLength
@@ -232,8 +235,12 @@ export class CoreExcameraLabsI2CDriver {
 	static async sendRecvTextCommand(port, textCommand, sendBuffer, recvLength, options) {
 		const encoder = new TextEncoder()
 		const encoded = encoder.encode(textCommand)
-
 		const [ command ] = encoded
+
+		if(recvLength === undefined || recvLength <= 0) {
+			return CoreExcameraLabsI2CDriver.sendCommandNoReply(port, command, sendBuffer, options)
+		}
+
 		const readBuffer = new ArrayBuffer(recvLength)
 		return CoreExcameraLabsI2CDriver.sendRecvCommand(port, command, sendBuffer, recvLength, readBuffer, options)
 	}

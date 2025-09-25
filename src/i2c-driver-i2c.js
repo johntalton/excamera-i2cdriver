@@ -2,17 +2,24 @@ import { INITIAL_CRC } from './crc-16-ccitt.js'
 import { ExcameraLabsI2CDriver } from './i2c-driver.js'
 
 /** @import { I2CAddress, I2CBufferSource, I2CReadResult } from '@johntalton/and-other-delights' */
-/** @import { SerialPort } from './serial.js' */
 /** @import { Start } from './parse-buffers.js' */
+
+/**
+ * @typedef {Object} ExcameraLabsI2CDriverI2COptions
+ * @property {ReadableWritablePair} port
+ */
 
 export class ExcameraLabsI2CDriverI2C {
 	#port
 	#crc = INITIAL_CRC
 
+	/**
+	 * @param {ExcameraLabsI2CDriverI2COptions} options
+	 */
 	static from(options) { return new ExcameraLabsI2CDriverI2C(options) }
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ExcameraLabsI2CDriverI2COptions} options
 	 */
 	constructor({ port }) { this.#port = port }
 

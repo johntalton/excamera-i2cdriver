@@ -29,13 +29,12 @@ import {
 	COMMAND_TRANSMIT_STATUS_INFO
 } from './defs.js'
 
-/** @import { SerialPort, ReadResult, TargetReadBuffer, SendBuffer, CommandOptions } from './serial.js' */
+/** @import { ReadResult, TargetReadBuffer, SendBuffer, CommandOptions } from './serial.js' */
 /** @import { TransmitStatusInfo, Start, StartWithDevice, BusStatus } from './parse-buffers.js' */
-
 
 export class ExcameraLabsI2CDriver {
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<TransmitStatusInfo>}
 	 */
@@ -45,7 +44,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<any>}
 	 */
@@ -55,7 +54,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} b
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<number>}
@@ -66,7 +65,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} speed
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
@@ -78,7 +77,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} dev
 	 * @param {boolean} readMode
 	 * @param {CommandOptions} [options]
@@ -92,7 +91,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} count
 	 * @param {TargetReadBuffer} readBuffer
 	 * @param {CommandOptions} [options]
@@ -109,7 +108,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} count
 	 * @param {SendBuffer} bufferSource
 	 * @param {CommandOptions} [options]
@@ -127,7 +126,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} count
 	 * @param {TargetReadBuffer} readBuffer
 	 * @param {CommandOptions} [options]
@@ -138,7 +137,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -147,7 +146,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<BusStatus>}
 	 */
@@ -157,7 +156,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number} dev
 	 * @param {number} addr
 	 * @param {number} count
@@ -171,7 +170,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<StartWithDevice[]>}
 	 */
@@ -181,7 +180,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 		/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -190,7 +189,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -199,7 +198,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -208,7 +207,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -217,7 +216,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {number[]} commands
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<ReadResult>}
@@ -236,7 +235,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -245,7 +244,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -254,7 +253,9 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
+	 * @param {number} scl
+	 * @param {number} sda
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */
@@ -264,7 +265,7 @@ export class ExcameraLabsI2CDriver {
 	}
 
 	/**
-	 * @param {SerialPort} port
+	 * @param {ReadableWritablePair} port
 	 * @param {CommandOptions} [options]
 	 * @returns {Promise<void>}
 	 */

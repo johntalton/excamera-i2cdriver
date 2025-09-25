@@ -5,7 +5,7 @@ import {
 } from './defs.js'
 import { range } from './range.js'
 
-/** @import { ReadResult } from './serial.js' */
+/** @import { ReadResult, TargetReadBuffer } from './serial.js' */
 
 /**
  * @typedef {Object} Start
@@ -27,14 +27,25 @@ import { range } from './range.js'
  * @property {number} sda
  */
 
+/**
+ * @param {TargetReadBuffer} buffer
+ * @param {number} length
+ */
 function assertAtLeastByteLength(buffer, length) {
 	if(buffer.byteLength < length) { throw new Error('invalid byte length - short') }
 }
 
+/**
+ * @param {TargetReadBuffer} buffer
+ */
 function assertNonZeroByteLength(buffer) {
 	if(buffer.byteLength <= 0) { throw new Error('zero (or less 🤯) length buffer') }
 }
 
+/**
+ * @param {number} bytesRead
+ * @param {number} target
+ */
 function assertBytesRead(bytesRead, target) {
 	if(bytesRead !== target) { throw new Error('invalid byte length') }
 }
@@ -185,7 +196,7 @@ export class ResponseBufferParser {
 		const SCAN_END_ADDRESS = 0x77
 		const count = SCAN_END_ADDRESS - SCAN_START_ADDRESS
 
-		return range(0, count).map(index => {
+		return [ ...range(0, count) ].map(index => {
 			const result =  ResponseBufferParser.parseStart({ bytesRead: 1, buffer: u8.subarray(index, index + 1) })
 			return {
 				...result,
